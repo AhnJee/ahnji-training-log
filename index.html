@@ -111,8 +111,7 @@
     cursor:pointer;
     flex-shrink:0;
   }
-  .odo-btn:active{background:var(--matcha-deep);}
-  .odo-display{
+  .odo-btn:active{background:var(--matcha-deep);}  .odo-display{
     flex:1;
     text-align:center;
     position:relative;
@@ -145,6 +144,20 @@
     color:var(--matcha-bright);
     outline:none;
   }
+
+  .export-row{
+    margin-top:10px;
+    text-align:right;
+  }
+  #export-backup{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    letter-spacing:0.04em;
+    cursor:pointer;
+    padding:4px 2px;
+  }
+  #export-backup:active{color:var(--matcha-bright);}
 
   /* DAY TABS */
   .tabs{
@@ -433,6 +446,16 @@
     font-size:11px;
   }
 
+  .loading-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+
   .save-toast{
     position:fixed;
     bottom:18px;
@@ -476,6 +499,10 @@
       </div>
       <div class="odo-btn" id="odo-plus">+</div>
     </div>
+  </div>
+
+  <div class="export-row">
+    <span id="export-backup">⬇ Export backup</span>
   </div>
 </header>
 
@@ -547,14 +574,77 @@ function getExName(ex){
   return customNames[ex.id] || ex.name;
 }
 
+// Fetch with a hard timeout — prevents the app from hanging forever if the
+// Apps Script backend is slow, cold-starting, or unreachable.
+function fetchWithTimeout(url, options = {}, timeoutMs = 6000){
+  const controller = new AbortController();
+  const id = setTimeout(()=> controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(()=> clearTimeout(id));
+}
+
 // Storage adapter: writes to the Google Sheet backend when CONFIG.API_URL is
 // set, mirrors every write to localStorage as an offline cache, and reads
 // from localStorage if the Sheet is unreachable (no signal, script down, etc).
+// Offline sync queue: when a write to the Sheet fails, it's queued here
+// (keyed by storage key, latest value wins) and retried automatically once
+// the connection is back — so offline entries don't get lost, just delayed.
+const QUEUE_KEY = '__pending_sync_queue__';
+
+function getQueue(){
+  try{
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveQueue(q){
+  try{ localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }catch(e){}
+}
+function addToQueue(key, value){
+  const q = getQueue();
+  q[key] = value;
+  saveQueue(q);
+}
+function removeFromQueue(key){
+  const q = getQueue();
+  if(key in q){ delete q[key]; saveQueue(q); }
+}
+function queueSize(){
+  return Object.keys(getQueue()).length;
+}
+
+async function flushPendingQueue(){
+  if(!CONFIG.API_URL) return;
+  const q = getQueue();
+  const keys = Object.keys(q);
+  if(keys.length === 0) return;
+
+  let syncedAny = false;
+  for(const key of keys){
+    try{
+      await fetchWithTimeout(CONFIG.API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key, value: q[key] })
+      });
+      removeFromQueue(key);
+      syncedAny = true;
+    }catch(e){
+      break; // still unreachable — stop and try again next time
+    }
+  }
+
+  if(syncedAny){
+    storageMode = queueSize() === 0 ? 'sheet' : 'pending';
+    updateSyncBadge();
+    if(queueSize() === 0) showToast('synced');
+  }
+}
+
 const store = {
   async get(key){
     if(CONFIG.API_URL){
       try{
-        const res = await fetch(`${CONFIG.API_URL}?key=${encodeURIComponent(key)}`);
+        const res = await fetchWithTimeout(`${CONFIG.API_URL}?key=${encodeURIComponent(key)}`);
         const data = await res.json();
         storageMode = 'sheet';
         if(data.value !== undefined && data.value !== null){
@@ -563,7 +653,7 @@ const store = {
         }
         return null;
       }catch(e){
-        // fall through to local cache
+        // fall through to local cache (timeout, offline, or backend error)
       }
     }
     try{
@@ -579,20 +669,23 @@ const store = {
     let sheetOk = false;
     if(CONFIG.API_URL){
       try{
-        await fetch(CONFIG.API_URL, {
+        await fetchWithTimeout(CONFIG.API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ key, value })
         });
         sheetOk = true;
         storageMode = 'sheet';
+        removeFromQueue(key);
       }catch(e){
-        // fall through to local-only
+        addToQueue(key, value);
       }
     }
     try{
       localStorage.setItem(key, value);
-      if(!sheetOk && storageMode !== 'sheet') storageMode = 'local';
+      if(!sheetOk){
+        storageMode = CONFIG.API_URL ? 'pending' : 'local';
+      }
       return true;
     }catch(e){
       if(!sheetOk){ storageMode = 'memory'; return false; }
@@ -686,29 +779,30 @@ function showToast(msg){
 }
 
 async function loadAll(){
-  // sessions
-  const raw = await store.get('sessions-count');
-  sessions = raw ? (parseInt(raw,10) || 0) : 0;
+  const workingDays = DAYS.filter(d => !d.rest);
+
+  const [rawSessions, rawNames, ...rawDays] = await Promise.all([
+    store.get('sessions-count'),
+    store.get('exercise-names'),
+    ...workingDays.map(day => store.get('day-data:' + day.id))
+  ]);
+
+  sessions = rawSessions ? (parseInt(rawSessions,10) || 0) : 0;
   renderOdometer();
 
-  // custom exercise names
-  const rawNames = await store.get('exercise-names');
   try{
     customNames = rawNames ? JSON.parse(rawNames) : {};
   }catch(e){
     customNames = {};
   }
 
-  // day data
-  for(const day of DAYS){
-    if(day.rest) continue;
-    const raw2 = await store.get('day-data:' + day.id);
+  workingDays.forEach((day, i)=>{
     try{
-      dayData[day.id] = raw2 ? JSON.parse(raw2) : {};
+      dayData[day.id] = rawDays[i] ? JSON.parse(rawDays[i]) : {};
     }catch(e){
       dayData[day.id] = {};
     }
-  }
+  });
 }
 
 async function saveCustomNames(){
@@ -1017,18 +1111,44 @@ odoInput.addEventListener('keydown', (e)=>{
 async function init(){
   document.getElementById('today-label').textContent = todayLabel();
   buildTabs();
+  document.getElementById('main').innerHTML = `<div class="loading-state">Loading your data…</div>`;
   await loadAll();
   setActiveDay(currentDayId());
   updateSyncBadge();
+  flushPendingQueue();
 }
 init();
 
+document.getElementById('export-backup').addEventListener('click', ()=>{
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    sessions: sessions,
+    customNames: customNames,
+    dayData: dayData
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `ahnji-training-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('backup downloaded');
+});
+
 function updateSyncBadge(){
   const badge = document.getElementById('sync-badge');
-  if(storageMode === 'sheet'){
+  const pending = queueSize();
+  if(pending > 0){
+    badge.textContent = `PENDING SYNC (${pending})`;
+    badge.className = 'sync-badge local';
+  } else if(storageMode === 'sheet'){
     badge.textContent = 'SYNCED';
     badge.className = 'sync-badge sheet';
-  } else if(storageMode === 'local'){
+  } else if(storageMode === 'local' || storageMode === 'pending'){
     badge.textContent = CONFIG.API_URL ? 'OFFLINE · LOCAL' : 'LOCAL ONLY';
     badge.className = 'sync-badge local';
   } else {
@@ -1036,6 +1156,11 @@ function updateSyncBadge(){
     badge.className = 'sync-badge memory';
   }
 }
+
+// Retry any queued offline writes: right away on load, whenever the browser
+// regains a connection, and every 30s as a safety net.
+window.addEventListener('online', flushPendingQueue);
+setInterval(flushPendingQueue, 30000);
 </script>
 </body>
 </html>
