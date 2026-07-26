@@ -513,6 +513,13 @@
 <div class="save-toast" id="toast">saved</div>
 
 <script>
+// Cache the app shell for offline loading — see sw.js
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
 const DAYS = [
   { id:'sun', label:'Sunday', code:'PUSH A', rest:false, exercises:[
     { id:'adv-tuck-planche', name:'Adv Tuck Planche', prescription:'3 x 15s', type:'hold', restSec:180 },
