@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>AhnJi: Training Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0a0b08;
+    --panel:#14160f;
+    --panel-2:#1b1e14;
+    --line:#2a2e1e;
+    --matcha-deep:#3c4a2c;
+    --matcha:#8fa968;
+    --matcha-bright:#c3d98f;
+    --cream:#eef0e4;
+    --muted:#8a9280;
+    --rest:#6b5b45;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--black);color:var(--cream);}
+  body{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  ::selection{background:var(--matcha-deep);color:var(--matcha-bright);}
+
+  /* HEADER */
+  header{
+    padding:22px 18px 14px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, #101208 0%, var(--black) 100%);
+  }
+  .title{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:0.01em;
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+  }
+  .title .name{color:var(--matcha-bright);}
+  .title .rest{color:var(--muted); font-weight:500;}
+  .subtitle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:3px;
+  }
+  .subtitle{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:0.03em;
+  }
+  .sync-badge{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    padding:3px 8px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+  .sync-badge.sheet{color:var(--matcha-bright);border-color:var(--matcha);}
+  .sync-badge.local{color:#d8c6a3;border-color:var(--rest);}
+  .sync-badge.memory{color:#c98a8a;border-color:#6b3a3a;}
+
+  /* ODOMETER COUNTER */
+  .counter-wrap{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .counter-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--muted);
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+    padding:4px 0;
+  }
+  .odometer{
+    flex:1;
+    display:flex;
+    align-items:center;
+    background:#050603;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 10px;
+    gap:10px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .odo-btn{
+    width:34px;height:34px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--matcha-bright);
+    font-size:18px;
+    font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .odo-btn:active{background:var(--matcha-deep);}
+  .odo-display{
+    flex:1;
+    text-align:center;
+    position:relative;
+  }
+  .odo-number{
+    font-family:'JetBrains Mono',monospace;
+    font-size:30px;
+    font-weight:700;
+    color:var(--matcha-bright);
+    text-shadow:0 0 14px rgba(195,217,143,0.35);
+    letter-spacing:0.04em;
+  }
+  .odo-caption{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    margin-top:1px;
+  }
+  .odo-input{
+    display:none;
+    width:100%;
+    background:transparent;
+    border:none;
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:30px;
+    font-weight:700;
+    color:var(--matcha-bright);
+    outline:none;
+  }
+
+  /* DAY TABS */
+  .tabs{
+    display:flex;
+    overflow-x:auto;
+    gap:8px;
+    padding:14px 18px;
+    scrollbar-width:none;
+    border-bottom:1px solid var(--line);
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex-shrink:0;
+    padding:9px 14px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab .d{font-weight:400; opacity:0.75; margin-right:4px;}
+  .tab.active{
+    background:var(--matcha-deep);
+    border-color:var(--matcha);
+    color:var(--matcha-bright);
+  }
+  .tab.rest.active{
+    background:#2c2419;
+    border-color:var(--rest);
+    color:#d8c6a3;
+  }
+
+  /* MAIN */
+  main{padding:16px 18px 10px;}
+  .day-heading{
+    font-size:15px;
+    font-weight:700;
+    color:var(--cream);
+    margin-bottom:2px;
+  }
+  .day-heading .code{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--matcha);
+    font-weight:500;
+    margin-left:8px;
+  }
+  .day-progress{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 14px 12px;
+    margin-bottom:10px;
+  }
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:10px;
+  }
+  .ex-name{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--cream);
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .ex-name-text{
+    outline:none;
+  }
+  .ex-name-text.editing{
+    border-bottom:1px dashed var(--matcha);
+    color:var(--matcha-bright);
+    padding-bottom:1px;
+  }
+  .edit-pencil{
+    font-size:11px;
+    color:var(--muted);
+    cursor:pointer;
+    flex-shrink:0;
+    padding:2px 3px;
+  }
+  .edit-pencil:active{color:var(--matcha-bright);}
+  .ex-prescription{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--matcha);
+    margin-top:2px;
+  }
+  .ex-type-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:3px 6px;
+    flex-shrink:0;
+    margin-left:10px;
+  }
+
+  .sets-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .set-input-wrap{
+    position:relative;
+  }
+  .set-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-bottom:4px;
+    display:block;
+  }
+  .set-input{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--cream);
+    font-family:'JetBrains Mono',monospace;
+    font-size:15px;
+    font-weight:600;
+    text-align:center;
+    padding:9px 4px 9px 4px;
+    outline:none;
+  }
+  .set-input:focus{
+    border-color:var(--matcha);
+    background:#20241a;
+  }
+  .set-input.hold{color:var(--matcha-bright);}
+  .unit{
+    position:absolute;
+    right:8px;
+    bottom:9px;
+    font-size:9px;
+    color:var(--muted);
+    pointer-events:none;
+  }
+  .dual-input{
+    display:flex;
+    align-items:center;
+    gap:3px;
+  }
+  .dual-input .set-input{
+    padding:8px 2px;
+    font-size:13.5px;
+    min-width:0;
+  }
+  .dual-sep{
+    color:var(--muted);
+    font-size:10px;
+    flex-shrink:0;
+  }
+  .dual-units{
+    display:flex;
+    justify-content:space-between;
+    margin-top:3px;
+    padding:0 2px;
+  }
+  .dual-units span{
+    font-family:'JetBrains Mono',monospace;
+    font-size:8px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+
+  /* cardio card */
+  .cardio-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:13px 14px;
+  }
+  .cardio-info .ex-name{margin-bottom:1px;}
+  .check{
+    width:26px;height:26px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    font-size:15px;
+    color:transparent;
+  }
+  .check.done{
+    background:var(--matcha-deep);
+    border-color:var(--matcha);
+    color:var(--matcha-bright);
+  }
+
+  /* rest timer */
+  .rest-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+  }
+  .rest-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    flex-shrink:0;
+  }
+  .rest-timer{
+    position:relative;
+    flex:1;
+    height:34px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    overflow:hidden;
+    cursor:pointer;
+    user-select:none;
+  }
+  .rest-fill{
+    position:absolute;
+    top:0; left:0; bottom:0;
+    width:100%;
+    background:var(--matcha-deep);
+    transition:width 1s linear;
+  }
+  .rest-text{
+    position:relative;
+    z-index:1;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    letter-spacing:0.03em;
+  }
+  .rest-timer.running .rest-text{color:var(--matcha-bright);}
+  .rest-timer.running{border-color:var(--matcha);}
+  .rest-timer.done{
+    border-color:var(--matcha-bright);
+  }
+  .rest-timer.done .rest-fill{
+    background:var(--matcha);
+  }
+  .rest-timer.done .rest-text{
+    color:#0a0b08;
+    font-weight:700;
+  }
+
+  /* rest day */
+  .rest-panel{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .rest-panel .big{
+    font-size:15px;
+    color:#d8c6a3;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .rest-panel .small{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+  }
+
+  .save-toast{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--matcha-deep);
+    color:var(--matcha-bright);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:8px 16px;
+    border-radius:20px;
+    border:1px solid var(--matcha);
+    opacity:0;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    pointer-events:none;
+    letter-spacing:0.04em;
+  }
+  .save-toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title"><span class="name">AhnJi</span><span class="rest">Training Log</span></div>
+  <div class="subtitle-row">
+    <div class="subtitle" id="today-label">—</div>
+    <div class="sync-badge" id="sync-badge">···</div>
+  </div>
+
+  <div class="counter-wrap">
+    <div class="counter-label">SESSIONS</div>
+    <div class="odometer">
+      <div class="odo-btn" id="odo-minus">−</div>
+      <div class="odo-display" id="odo-display">
+        <div class="odo-number" id="odo-number">000</div>
+        <div class="odo-caption">days worked out · tap to edit</div>
+        <input class="odo-input" id="odo-input" inputmode="numeric" type="number" min="0">
+      </div>
+      <div class="odo-btn" id="odo-plus">+</div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<main id="main"></main>
+
+<div class="save-toast" id="toast">saved</div>
+
+<script>
+const DAYS = [
+  { id:'sun', label:'Sunday', code:'PUSH A', rest:false, exercises:[
+    { id:'adv-tuck-planche', name:'Adv Tuck Planche', prescription:'3 x 15s', type:'hold', restSec:180 },
+    { id:'planche-pushup', name:'Planche Push Up', prescription:'3 x 4-6', type:'reps', restSec:180 },
+    { id:'lateral-raise-a', name:'Lateral Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'cardio-sun', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
+  ]},
+  { id:'mon', label:'Monday', code:'PULL A', rest:false, exercises:[
+    { id:'adv-tuck-front-lever', name:'Adv Tuck Front Lever', prescription:'3 x 15s', type:'hold', restSec:180 },
+    { id:'weighted-pullup', name:'Weighted Pull Up', prescription:'3 x 4-6', type:'weight', restSec:180 },
+    { id:'hammer-curl', name:'Hammer Curl', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'cardio-mon', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
+  ]},
+  { id:'tue', label:'Tuesday', code:'LEGS A', rest:false, exercises:[
+    { id:'squat', name:'Squat', prescription:'3 x 4-6', type:'weight', restSec:180 },
+    { id:'hamstring-curl-a', name:'Hamstring Curl', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'standing-calf-raise', name:'Standing Calf Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'hanging-leg-raise', name:'Hanging Leg Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'cardio-tue', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
+  ]},
+  { id:'wed', label:'Wednesday', code:'PUSH B', rest:false, exercises:[
+    { id:'tuck-planche', name:'Tuck Planche', prescription:'3 x 15s', type:'hold', restSec:180 },
+    { id:'incline-bench', name:'Incline Bench Press', prescription:'3 x 8-12', type:'weight', restSec:180 },
+    { id:'lateral-raise-b', name:'Lateral Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'cardio-wed', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
+  ]},
+  { id:'thu', label:'Thursday', code:'PULL B', rest:false, exercises:[
+    { id:'tuck-lever', name:'Tuck Lever', prescription:'3 x 15s', type:'hold', restSec:180 },
+    { id:'seated-cable-row', name:'Seated Cable Row', prescription:'3 x 8-12', type:'weight', restSec:180 },
+    { id:'bicep-curl', name:'Bicep Curl', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'cardio-thu', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
+  ]},
+  { id:'fri', label:'Friday', code:'LEGS B', rest:false, exercises:[
+    { id:'leg-press', name:'Leg Press', prescription:'3 x 8-12', type:'weight', restSec:180 },
+    { id:'hamstring-curl-b', name:'Hamstring Curl', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'seated-calf-raise', name:'Seated Calf Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'knee-raise', name:'Knee Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'cardio-fri', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
+  ]},
+  { id:'sat', label:'Saturday', code:'REST', rest:true, exercises:[] },
+];
+
+// ---- CONFIG ----
+// Paste your Apps Script Web App URL here (ends in /exec).
+// See apps-script-backend.gs for setup steps. Leave blank to run on
+// localStorage only (data stays on this device/browser).
+const CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbxMMZdC4fLpA1cNqJh9DdDPgb8N_29L-Ou920B-aQ33yU0B5_pvEX49iPEz-v09AzOO3A/exec'
+};
+
+let dayData = {};   // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
+let customNames = {}; // { exerciseId: 'custom label' }
+let sessions = 0;
+let activeDay = null;
+let toastTimer = null;
+let storageMode = 'unknown'; // 'sheet' | 'local' | 'memory'
+
+function getExName(ex){
+  return customNames[ex.id] || ex.name;
+}
+
+// Storage adapter: writes to the Google Sheet backend when CONFIG.API_URL is
+// set, mirrors every write to localStorage as an offline cache, and reads
+// from localStorage if the Sheet is unreachable (no signal, script down, etc).
+const store = {
+  async get(key){
+    if(CONFIG.API_URL){
+      try{
+        const res = await fetch(`${CONFIG.API_URL}?key=${encodeURIComponent(key)}`);
+        const data = await res.json();
+        storageMode = 'sheet';
+        if(data.value !== undefined && data.value !== null){
+          try{ localStorage.setItem(key, data.value); }catch(e){}
+          return data.value;
+        }
+        return null;
+      }catch(e){
+        // fall through to local cache
+      }
+    }
+    try{
+      const v = localStorage.getItem(key);
+      if(storageMode !== 'sheet') storageMode = 'local';
+      return v;
+    }catch(e){
+      storageMode = 'memory';
+      return null;
+    }
+  },
+  async set(key, value){
+    let sheetOk = false;
+    if(CONFIG.API_URL){
+      try{
+        await fetch(CONFIG.API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ key, value })
+        });
+        sheetOk = true;
+        storageMode = 'sheet';
+      }catch(e){
+        // fall through to local-only
+      }
+    }
+    try{
+      localStorage.setItem(key, value);
+      if(!sheetOk && storageMode !== 'sheet') storageMode = 'local';
+      return true;
+    }catch(e){
+      if(!sheetOk){ storageMode = 'memory'; return false; }
+      return true;
+    }
+  }
+};
+let timerState = {}; // exId -> { remaining, total, intervalId, running }
+
+function formatTime(sec){
+  const m = Math.floor(sec/60);
+  const s = sec%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function clearAllTimers(){
+  Object.values(timerState).forEach(st=>{
+    if(st && st.intervalId) clearInterval(st.intervalId);
+  });
+  timerState = {};
+}
+
+function updateTimerUI(exId, remaining, total){
+  const fill = document.querySelector(`.rest-fill[data-ex="${exId}"]`);
+  const text = document.querySelector(`.rest-text[data-ex="${exId}"]`);
+  if(text) text.textContent = formatTime(remaining);
+  if(fill) fill.style.width = `${Math.max(0,(remaining/total)*100)}%`;
+}
+
+function toggleTimer(exId, total){
+  const el = document.querySelector(`.rest-timer[data-ex="${exId}"]`);
+  let st = timerState[exId];
+
+  if(st && st.running){
+    clearInterval(st.intervalId);
+    timerState[exId] = null;
+    el.classList.remove('running','done');
+    updateTimerUI(exId, total, total);
+    return;
+  }
+
+  st = { remaining: total, total, running: true };
+  timerState[exId] = st;
+  el.classList.add('running');
+  el.classList.remove('done');
+  updateTimerUI(exId, st.remaining, total);
+
+  st.intervalId = setInterval(()=>{
+    st.remaining -= 1;
+    if(st.remaining <= 0){
+      clearInterval(st.intervalId);
+      st.running = false;
+      el.classList.remove('running');
+      el.classList.add('done');
+      updateTimerUI(exId, 0, total);
+      onTimerComplete();
+      setTimeout(()=>{
+        el.classList.remove('done');
+        updateTimerUI(exId, total, total);
+        timerState[exId] = null;
+      }, 1500);
+      return;
+    }
+    updateTimerUI(exId, st.remaining, total);
+  }, 1000);
+}
+
+function onTimerComplete(){
+  if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.16;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 400);
+  }catch(e){}
+}
+
+// Storage adapter is defined above (Sheets-backed with localStorage fallback).
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg || 'saved';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 1100);
+}
+
+async function loadAll(){
+  // sessions
+  const raw = await store.get('sessions-count');
+  sessions = raw ? (parseInt(raw,10) || 0) : 0;
+  renderOdometer();
+
+  // custom exercise names
+  const rawNames = await store.get('exercise-names');
+  try{
+    customNames = rawNames ? JSON.parse(rawNames) : {};
+  }catch(e){
+    customNames = {};
+  }
+
+  // day data
+  for(const day of DAYS){
+    if(day.rest) continue;
+    const raw2 = await store.get('day-data:' + day.id);
+    try{
+      dayData[day.id] = raw2 ? JSON.parse(raw2) : {};
+    }catch(e){
+      dayData[day.id] = {};
+    }
+  }
+}
+
+async function saveCustomNames(){
+  const ok = await store.set('exercise-names', JSON.stringify(customNames));
+  showToast(ok ? 'name saved' : 'save failed');
+  updateSyncBadge();
+}
+
+function renderOdometer(){
+  document.getElementById('odo-number').textContent = String(sessions).padStart(3,'0');
+}
+
+async function saveSessions(){
+  const ok = await store.set('sessions-count', String(sessions));
+  showToast(ok ? 'saved' : 'save failed');
+  updateSyncBadge();
+}
+
+async function saveDay(dayId){
+  const ok = await store.set('day-data:' + dayId, JSON.stringify(dayData[dayId]));
+  showToast(ok ? 'saved' : 'save failed');
+  updateSyncBadge();
+}
+
+function todayLabel(){
+  const d = new Date();
+  const opts = { weekday:'long', month:'short', day:'numeric' };
+  return d.toLocaleDateString('en-US', opts).toUpperCase();
+}
+
+function buildTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  DAYS.forEach(day=>{
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (day.rest ? ' rest' : '');
+    tab.innerHTML = `<span class="d">${day.label.slice(0,3)}</span>${day.code}`;
+    tab.dataset.day = day.id;
+    tab.onclick = ()=> setActiveDay(day.id);
+    tabsEl.appendChild(tab);
+  });
+}
+
+function setActiveDay(dayId){
+  activeDay = dayId;
+  clearAllTimers();
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.day === dayId);
+  });
+  renderDay(dayId);
+}
+
+function renderDay(dayId){
+  const day = DAYS.find(d=>d.id===dayId);
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  if(day.rest){
+    main.innerHTML = `
+      <div class="rest-panel">
+        <div class="big">Decompression Day</div>
+        <div class="small">no lifts logged here</div>
+      </div>`;
+    return;
+  }
+
+  const heading = document.createElement('div');
+  heading.innerHTML = `<div class="day-heading">${day.label}<span class="code">${day.code}</span></div>`;
+  main.appendChild(heading);
+
+  const progress = document.createElement('div');
+  progress.className = 'day-progress';
+  main.appendChild(progress);
+
+  day.exercises.forEach(ex=>{
+    if(ex.type === 'cardio'){
+      const card = document.createElement('div');
+      card.className = 'card cardio-card';
+      const done = !!dayData[dayId][ex.id];
+      card.innerHTML = `
+        <div class="cardio-info">
+          <div class="ex-name" data-ex="${ex.id}">
+            <span class="ex-name-text">${getExName(ex)}</span>
+            <span class="edit-pencil" data-ex="${ex.id}">✎</span>
+          </div>
+          <div class="ex-prescription">${ex.prescription}</div>
+        </div>
+        <div class="check ${done ? 'done' : ''}" data-ex="${ex.id}">✓</div>
+      `;
+      card.querySelector('.check').onclick = (e)=>{
+        const cur = !!dayData[dayId][ex.id];
+        dayData[dayId][ex.id] = !cur;
+        e.target.classList.toggle('done', !cur);
+        saveDay(dayId);
+      };
+      main.appendChild(card);
+      return;
+    }
+
+    const values = dayData[dayId][ex.id] || [null, null, null];
+    const isHold = ex.type === 'hold';
+    const isReps = ex.type === 'reps';
+    const isWeight = ex.type === 'weight';
+    const tag = isHold ? 'HOLD' : (isReps ? 'REPS' : 'LOAD');
+
+    let setsHtml = '';
+    if(isWeight){
+      setsHtml = [0,1,2].map(i=>{
+        const v = (values[i] && typeof values[i] === 'object') ? values[i] : {};
+        return `
+          <div class="set-input-wrap">
+            <span class="set-label">Set ${i+1}</span>
+            <div class="dual-input">
+              <input class="set-input" type="number" inputmode="decimal"
+                data-ex="${ex.id}" data-set="${i}" data-field="w" value="${v.w ?? ''}" placeholder="0">
+              <span class="dual-sep">×</span>
+              <input class="set-input" type="number" inputmode="numeric"
+                data-ex="${ex.id}" data-set="${i}" data-field="r" value="${v.r ?? ''}" placeholder="0">
+            </div>
+            <div class="dual-units"><span>lb</span><span>reps</span></div>
+          </div>`;
+      }).join('');
+    } else {
+      const unit = isHold ? 's' : 'reps';
+      setsHtml = [0,1,2].map(i=>{
+        const v = (values[i] !== null && typeof values[i] !== 'object') ? values[i] : '';
+        return `
+          <div class="set-input-wrap">
+            <span class="set-label">Set ${i+1}</span>
+            <input class="set-input ${isHold?'hold':''}" type="number" inputmode="${isHold?'decimal':'numeric'}"
+              data-ex="${ex.id}" data-set="${i}" data-field="v" value="${v}" placeholder="0">
+            <span class="unit">${unit}</span>
+          </div>`;
+      }).join('');
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="ex-name" data-ex="${ex.id}">
+            <span class="ex-name-text">${getExName(ex)}</span>
+            <span class="edit-pencil" data-ex="${ex.id}">✎</span>
+          </div>
+          <div class="ex-prescription">${ex.prescription}</div>
+        </div>
+        <div class="ex-type-tag">${tag}</div>
+      </div>
+      <div class="sets-row">
+        ${setsHtml}
+      </div>
+      <div class="rest-row">
+        <span class="rest-label">Rest</span>
+        <div class="rest-timer" data-ex="${ex.id}" data-seconds="${ex.restSec}">
+          <div class="rest-fill" data-ex="${ex.id}"></div>
+          <span class="rest-text" data-ex="${ex.id}">${formatTime(ex.restSec)}</span>
+        </div>
+      </div>
+    `;
+    card.querySelectorAll('.set-input').forEach(input=>{
+      input.addEventListener('change', (e)=>{
+        const exId = e.target.dataset.ex;
+        const setIdx = parseInt(e.target.dataset.set,10);
+        const field = e.target.dataset.field;
+        if(!dayData[dayId][exId] || !Array.isArray(dayData[dayId][exId])){
+          dayData[dayId][exId] = [null, null, null];
+        }
+        if(field === 'v'){
+          dayData[dayId][exId][setIdx] = e.target.value;
+        } else {
+          const cur = (dayData[dayId][exId][setIdx] && typeof dayData[dayId][exId][setIdx] === 'object')
+            ? dayData[dayId][exId][setIdx] : {};
+          cur[field] = e.target.value;
+          dayData[dayId][exId][setIdx] = cur;
+        }
+        saveDay(dayId);
+      });
+    });
+    main.appendChild(card);
+  });
+
+  // progress readout
+  let totalFields = 0;
+  let filled = 0;
+  day.exercises.forEach(ex=>{
+    if(ex.type === 'cardio'){
+      totalFields += 1;
+      if(dayData[dayId][ex.id]) filled += 1;
+    } else if(ex.type === 'weight'){
+      totalFields += 6; // 3 sets x (weight + reps)
+      const v = dayData[dayId][ex.id];
+      if(Array.isArray(v)){
+        v.forEach(entry=>{
+          if(entry && typeof entry === 'object'){
+            if(entry.w !== '' && entry.w != null) filled++;
+            if(entry.r !== '' && entry.r != null) filled++;
+          }
+        });
+      }
+    } else {
+      totalFields += 3; // hold or reps-only
+      const v = dayData[dayId][ex.id];
+      if(Array.isArray(v)) filled += v.filter(x=>x!=='' && x!=null && typeof x !== 'object').length;
+    }
+  });
+  progress.textContent = `${filled} / ${totalFields} FIELDS LOGGED`;
+
+  // wire up rename-on-tap for every exercise name
+  main.querySelectorAll('.edit-pencil').forEach(pencil=>{
+    pencil.addEventListener('click', (e)=>{
+      const exId = e.target.dataset.ex;
+      const nameEl = e.target.previousElementSibling;
+      startEditingName(nameEl, exId);
+    });
+  });
+
+  // wire up rest timers
+  main.querySelectorAll('.rest-timer').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const exId = el.dataset.ex;
+      const total = parseInt(el.dataset.seconds, 10);
+      toggleTimer(exId, total);
+    });
+  });
+}
+
+function startEditingName(nameEl, exId){
+  if(nameEl.classList.contains('editing')) return;
+  const original = nameEl.textContent;
+  nameEl.classList.add('editing');
+  nameEl.contentEditable = 'true';
+  nameEl.focus();
+  document.execCommand && placeCaretAtEnd(nameEl);
+
+  function finish(){
+    nameEl.classList.remove('editing');
+    nameEl.contentEditable = 'false';
+    const newName = nameEl.textContent.trim();
+    if(newName && newName !== original){
+      customNames[exId] = newName;
+      saveCustomNames();
+    } else if(!newName){
+      nameEl.textContent = original;
+    }
+    nameEl.removeEventListener('blur', finish);
+    nameEl.removeEventListener('keydown', onKey);
+  }
+  function onKey(e){
+    if(e.key === 'Enter'){ e.preventDefault(); nameEl.blur(); }
+  }
+  nameEl.addEventListener('blur', finish);
+  nameEl.addEventListener('keydown', onKey);
+}
+
+function placeCaretAtEnd(el){
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function currentDayId(){
+  const idx = new Date().getDay(); // 0=Sun
+  return DAYS[idx].id;
+}
+
+document.getElementById('odo-minus').onclick = ()=>{
+  sessions = Math.max(0, sessions - 1);
+  renderOdometer();
+  saveSessions();
+};
+document.getElementById('odo-plus').onclick = ()=>{
+  sessions += 1;
+  renderOdometer();
+  saveSessions();
+};
+
+const odoDisplay = document.getElementById('odo-display');
+const odoNumber = document.getElementById('odo-number');
+const odoInput = document.getElementById('odo-input');
+odoDisplay.addEventListener('click', ()=>{
+  odoNumber.style.display = 'none';
+  document.querySelector('.odo-caption').style.display = 'none';
+  odoInput.style.display = 'block';
+  odoInput.value = sessions;
+  odoInput.focus();
+  odoInput.select();
+});
+function commitOdoInput(){
+  const val = parseInt(odoInput.value, 10);
+  sessions = isNaN(val) ? sessions : Math.max(0, val);
+  odoInput.style.display = 'none';
+  odoNumber.style.display = 'block';
+  document.querySelector('.odo-caption').style.display = 'block';
+  renderOdometer();
+  saveSessions();
+}
+odoInput.addEventListener('blur', commitOdoInput);
+odoInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ odoInput.blur(); }
+});
+
+async function init(){
+  document.getElementById('today-label').textContent = todayLabel();
+  buildTabs();
+  await loadAll();
+  setActiveDay(currentDayId());
+  updateSyncBadge();
+}
+init();
+
+function updateSyncBadge(){
+  const badge = document.getElementById('sync-badge');
+  if(storageMode === 'sheet'){
+    badge.textContent = 'SYNCED';
+    badge.className = 'sync-badge sheet';
+  } else if(storageMode === 'local'){
+    badge.textContent = CONFIG.API_URL ? 'OFFLINE · LOCAL' : 'LOCAL ONLY';
+    badge.className = 'sync-badge local';
+  } else {
+    badge.textContent = 'NOT SAVING';
+    badge.className = 'sync-badge memory';
+  }
+}
+</script>
+</body>
+</html>
