@@ -200,6 +200,10 @@
     font-weight:700;
     color:var(--cream);
     margin-bottom:2px;
+    display:flex;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:2px;
   }
   .day-heading .code{
     font-family:'JetBrains Mono',monospace;
@@ -207,12 +211,54 @@
     color:var(--matcha);
     font-weight:500;
     margin-left:8px;
+    outline:none;
+  }
+  .day-heading .code.editing{
+    border-bottom:1px dashed var(--matcha);
+    color:var(--matcha-bright);
+  }
+  .day-code-pencil{
+    font-size:10px;
+    color:var(--muted);
+    cursor:pointer;
+    padding:2px 4px;
+    flex-shrink:0;
+  }
+  .day-code-pencil:active{color:var(--matcha-bright);}
+
+  .day-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .day-toolbar .day-progress{
+    margin-bottom:0;
   }
   .day-progress{
     font-family:'JetBrains Mono',monospace;
     font-size:10.5px;
     color:var(--muted);
-    margin-bottom:14px;
+  }
+  .rest-toggle-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.04em;
+    padding:6px 10px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--muted);
+    cursor:pointer;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .rest-toggle-btn:active{border-color:var(--matcha);}
+  .rest-toggle-btn.active{
+    color:#d8c6a3;
+    border-color:var(--rest);
+    background:#20190f;
   }
 
   .card{
@@ -268,12 +314,42 @@
     border-radius:5px;
     padding:3px 6px;
     flex-shrink:0;
+  }
+  .card-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
     margin-left:10px;
+  }
+  .gear-btn{
+    font-size:13px;
+    color:var(--muted);
+    cursor:pointer;
+    padding:2px 4px;
+    flex-shrink:0;
+  }
+  .gear-btn:active{color:var(--matcha-bright);}
+  .remove-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    cursor:pointer;
+    padding:3px 6px;
+    border-radius:5px;
+    flex-shrink:0;
+    border:1px solid transparent;
+  }
+  .remove-btn:active{color:#c98a8a;}
+  .remove-btn.confirm{
+    color:#e2a3a3;
+    border-color:#6b3a3a;
+    background:rgba(107,58,58,0.2);
   }
 
   .sets-row{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(auto-fit,minmax(72px,1fr));
     gap:8px;
   }
   .set-input-wrap{
@@ -349,7 +425,9 @@
     align-items:center;
     justify-content:space-between;
     padding:13px 14px;
+    gap:10px;
   }
+  .cardio-info{min-width:0;}
   .cardio-info .ex-name{margin-bottom:1px;}
   .check{
     width:26px;height:26px;
@@ -429,10 +507,119 @@
     font-weight:700;
   }
 
+  /* inline exercise editor */
+  .edit-panel{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .edit-row{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .edit-row label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+  }
+  .edit-row select,
+  .edit-row input[type="text"],
+  .edit-row input[type="number"]{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--cream);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    padding:9px 10px;
+    outline:none;
+    width:100%;
+  }
+  .edit-row select:focus,
+  .edit-row input:focus{
+    border-color:var(--matcha);
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .stepper-btn{
+    width:30px;height:30px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--matcha-bright);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:15px;
+    user-select:none;
+    flex-shrink:0;
+  }
+  .stepper-btn:active{background:var(--matcha-deep);}
+  .stepper-val{
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    font-weight:700;
+    color:var(--cream);
+    min-width:18px;
+    text-align:center;
+  }
+  .edit-actions{
+    display:flex;
+    gap:8px;
+    margin-top:2px;
+  }
+  .edit-save,.edit-cancel{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.05em;
+    cursor:pointer;
+  }
+  .edit-save{
+    background:var(--matcha-deep);
+    border:1px solid var(--matcha);
+    color:var(--matcha-bright);
+  }
+  .edit-save:active{background:var(--matcha);color:#0a0b08;}
+  .edit-cancel{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+
+  .add-exercise-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:13px;
+    border-radius:12px;
+    border:1px dashed var(--line);
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  .add-exercise-btn:active{border-color:var(--matcha);color:var(--matcha-bright);}
+
   /* rest day */
   .rest-panel{
     text-align:center;
-    padding:60px 20px;
+    padding:44px 20px;
     color:var(--muted);
   }
   .rest-panel .big{
@@ -520,43 +707,47 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const DAYS = [
+// DEFAULT_DAYS is just the seed / fallback schedule. Everything here can be
+// overridden at runtime (exercise list, rest day flag, sets, prescription,
+// rest time, load type) via dayConfig, which is what actually gets rendered
+// and persisted.
+const DEFAULT_DAYS = [
   { id:'sun', label:'Sunday', code:'PUSH A', rest:false, exercises:[
-    { id:'adv-tuck-planche', name:'Adv Tuck Planche', prescription:'3 x 15s', type:'hold', restSec:180 },
-    { id:'planche-pushup', name:'Planche Push Up', prescription:'3 x 4-6', type:'reps', restSec:180 },
-    { id:'lateral-raise-a', name:'Lateral Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'adv-tuck-planche', name:'Adv Tuck Planche', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
+    { id:'planche-pushup', name:'Planche Push Up', prescription:'3 x 4-6', type:'reps', sets:3, restSec:180 },
+    { id:'lateral-raise-a', name:'Lateral Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
     { id:'cardio-sun', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'mon', label:'Monday', code:'PULL A', rest:false, exercises:[
-    { id:'adv-tuck-front-lever', name:'Adv Tuck Front Lever', prescription:'3 x 15s', type:'hold', restSec:180 },
-    { id:'weighted-pullup', name:'Weighted Pull Up', prescription:'3 x 4-6', type:'weight', restSec:180 },
-    { id:'hammer-curl', name:'Hammer Curl', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'adv-tuck-front-lever', name:'Adv Tuck Front Lever', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
+    { id:'weighted-pullup', name:'Weighted Pull Up', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180 },
+    { id:'hammer-curl', name:'Hammer Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
     { id:'cardio-mon', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'tue', label:'Tuesday', code:'LEGS A', rest:false, exercises:[
-    { id:'squat', name:'Squat', prescription:'3 x 4-6', type:'weight', restSec:180 },
-    { id:'hamstring-curl-a', name:'Hamstring Curl', prescription:'3 x 8-10', type:'weight', restSec:120 },
-    { id:'standing-calf-raise', name:'Standing Calf Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
-    { id:'hanging-leg-raise', name:'Hanging Leg Raise', prescription:'3 x 8-10', type:'weight', restSec:120 },
+    { id:'squat', name:'Squat', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180 },
+    { id:'hamstring-curl-a', name:'Hamstring Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
+    { id:'standing-calf-raise', name:'Standing Calf Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
+    { id:'hanging-leg-raise', name:'Hanging Leg Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
     { id:'cardio-tue', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
   ]},
   { id:'wed', label:'Wednesday', code:'PUSH B', rest:false, exercises:[
-    { id:'tuck-planche', name:'Tuck Planche', prescription:'3 x 15s', type:'hold', restSec:180 },
-    { id:'incline-bench', name:'Incline Bench Press', prescription:'3 x 8-12', type:'weight', restSec:180 },
-    { id:'lateral-raise-b', name:'Lateral Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'tuck-planche', name:'Tuck Planche', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
+    { id:'incline-bench', name:'Incline Bench Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
+    { id:'lateral-raise-b', name:'Lateral Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
     { id:'cardio-wed', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'thu', label:'Thursday', code:'PULL B', rest:false, exercises:[
-    { id:'tuck-lever', name:'Tuck Lever', prescription:'3 x 15s', type:'hold', restSec:180 },
-    { id:'seated-cable-row', name:'Seated Cable Row', prescription:'3 x 8-12', type:'weight', restSec:180 },
-    { id:'bicep-curl', name:'Bicep Curl', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'tuck-lever', name:'Tuck Lever', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
+    { id:'seated-cable-row', name:'Seated Cable Row', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
+    { id:'bicep-curl', name:'Bicep Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
     { id:'cardio-thu', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'fri', label:'Friday', code:'LEGS B', rest:false, exercises:[
-    { id:'leg-press', name:'Leg Press', prescription:'3 x 8-12', type:'weight', restSec:180 },
-    { id:'hamstring-curl-b', name:'Hamstring Curl', prescription:'3 x 12-15', type:'weight', restSec:90 },
-    { id:'seated-calf-raise', name:'Seated Calf Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
-    { id:'knee-raise', name:'Knee Raise', prescription:'3 x 12-15', type:'weight', restSec:90 },
+    { id:'leg-press', name:'Leg Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
+    { id:'hamstring-curl-b', name:'Hamstring Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
+    { id:'seated-calf-raise', name:'Seated Calf Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
+    { id:'knee-raise', name:'Knee Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
     { id:'cardio-fri', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
   ]},
   { id:'sat', label:'Saturday', code:'REST', rest:true, exercises:[] },
@@ -570,15 +761,25 @@ const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxMMZdC4fLpA1cNqJh9DdDPgb8N_29L-Ou920B-aQ33yU0B5_pvEX49iPEz-v09AzOO3A/exec'
 };
 
-let dayData = {};   // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
-let customNames = {}; // { exerciseId: 'custom label' }
+let dayData = {};     // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
+let dayConfig = {};   // { dayId: { rest, code, exercises:[{id,name,type,sets,prescription,restSec}] } }
 let sessions = 0;
 let activeDay = null;
 let toastTimer = null;
 let storageMode = 'unknown'; // 'sheet' | 'local' | 'memory'
+let addFormOpenFor = null;   // dayId currently showing the "add exercise" form
+let editFormOpenFor = null;  // exercise id currently showing its edit form
 
-function getExName(ex){
-  return customNames[ex.id] || ex.name;
+function cloneDefaultDayConfig(){
+  const cfg = {};
+  DEFAULT_DAYS.forEach(d=>{
+    cfg[d.id] = {
+      rest: d.rest,
+      code: d.code,
+      exercises: d.exercises.map(ex=>({ ...ex }))
+    };
+  });
+  return cfg;
 }
 
 // Fetch with a hard timeout — prevents the app from hanging forever if the
@@ -724,6 +925,7 @@ function updateTimerUI(exId, remaining, total){
 
 function toggleTimer(exId, total){
   const el = document.querySelector(`.rest-timer[data-ex="${exId}"]`);
+  if(!el) return;
   let st = timerState[exId];
 
   if(st && st.running){
@@ -775,8 +977,6 @@ function onTimerComplete(){
   }catch(e){}
 }
 
-// Storage adapter is defined above (Sheets-backed with localStorage fallback).
-
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg || 'saved';
@@ -786,36 +986,47 @@ function showToast(msg){
 }
 
 async function loadAll(){
-  const workingDays = DAYS.filter(d => !d.rest);
+  dayConfig = cloneDefaultDayConfig();
 
-  const [rawSessions, rawNames, ...rawDays] = await Promise.all([
+  const [rawSessions, rawNames, rawDayConfig, ...rawDays] = await Promise.all([
     store.get('sessions-count'),
     store.get('exercise-names'),
-    ...workingDays.map(day => store.get('day-data:' + day.id))
+    store.get('day-config'),
+    ...DEFAULT_DAYS.map(day => store.get('day-data:' + day.id))
   ]);
 
   sessions = rawSessions ? (parseInt(rawSessions,10) || 0) : 0;
   renderOdometer();
 
+  // Legacy rename migration: older versions stored renames separately.
+  // Apply them to the defaults before any saved day-config (below) takes over.
   try{
-    customNames = rawNames ? JSON.parse(rawNames) : {};
-  }catch(e){
-    customNames = {};
-  }
+    const legacyNames = rawNames ? JSON.parse(rawNames) : {};
+    Object.values(dayConfig).forEach(dc=>{
+      dc.exercises.forEach(ex=>{
+        if(legacyNames[ex.id]) ex.name = legacyNames[ex.id];
+      });
+    });
+  }catch(e){}
 
-  workingDays.forEach((day, i)=>{
+  // Saved custom day config (exercise list, rest flag, code, per-exercise
+  // sets/prescription/rest/type) fully overrides the defaults per day.
+  try{
+    const savedConfig = rawDayConfig ? JSON.parse(rawDayConfig) : null;
+    if(savedConfig){
+      Object.keys(savedConfig).forEach(dayId=>{
+        if(dayConfig[dayId]) dayConfig[dayId] = savedConfig[dayId];
+      });
+    }
+  }catch(e){}
+
+  DEFAULT_DAYS.forEach((day, i)=>{
     try{
       dayData[day.id] = rawDays[i] ? JSON.parse(rawDays[i]) : {};
     }catch(e){
       dayData[day.id] = {};
     }
   });
-}
-
-async function saveCustomNames(){
-  const ok = await store.set('exercise-names', JSON.stringify(customNames));
-  showToast(ok ? 'name saved' : 'save failed');
-  updateSyncBadge();
 }
 
 function renderOdometer(){
@@ -829,7 +1040,13 @@ async function saveSessions(){
 }
 
 async function saveDay(dayId){
-  const ok = await store.set('day-data:' + dayId, JSON.stringify(dayData[dayId]));
+  const ok = await store.set('day-data:' + dayId, JSON.stringify(dayData[dayId] || {}));
+  showToast(ok ? 'saved' : 'save failed');
+  updateSyncBadge();
+}
+
+async function saveDayConfig(){
+  const ok = await store.set('day-config', JSON.stringify(dayConfig));
   showToast(ok ? 'saved' : 'save failed');
   updateSyncBadge();
 }
@@ -843,18 +1060,27 @@ function todayLabel(){
 function buildTabs(){
   const tabsEl = document.getElementById('tabs');
   tabsEl.innerHTML = '';
-  DAYS.forEach(day=>{
+  DEFAULT_DAYS.forEach(day=>{
+    const dc = dayConfig[day.id] || day;
     const tab = document.createElement('div');
-    tab.className = 'tab' + (day.rest ? ' rest' : '');
-    tab.innerHTML = `<span class="d">${day.label.slice(0,3)}</span>${day.code}`;
+    tab.className = 'tab' + (dc.rest ? ' rest' : '');
+    tab.innerHTML = `<span class="d">${day.label.slice(0,3)}</span>${dc.code}`;
     tab.dataset.day = day.id;
-    tab.onclick = ()=> setActiveDay(day.id);
+    tab.addEventListener('click', ()=> setActiveDay(day.id));
     tabsEl.appendChild(tab);
   });
+  if(activeDay){
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.classList.toggle('active', t.dataset.day === activeDay);
+    });
+  }
 }
+function refreshTabs(){ buildTabs(); }
 
 function setActiveDay(dayId){
   activeDay = dayId;
+  addFormOpenFor = null;
+  editFormOpenFor = null;
   clearAllTimers();
   document.querySelectorAll('.tab').forEach(t=>{
     t.classList.toggle('active', t.dataset.day === dayId);
@@ -862,62 +1088,198 @@ function setActiveDay(dayId){
   renderDay(dayId);
 }
 
-function renderDay(dayId){
-  const day = DAYS.find(d=>d.id===dayId);
-  const main = document.getElementById('main');
-  main.innerHTML = '';
+function generateExerciseId(name){
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'') || 'exercise';
+  return base + '-' + Date.now().toString(36).slice(-5);
+}
 
-  if(day.rest){
-    main.innerHTML = `
-      <div class="rest-panel">
-        <div class="big">Decompression Day</div>
-        <div class="small">no lifts logged here</div>
-      </div>`;
-    return;
-  }
+function toggleDayRest(dayId){
+  dayConfig[dayId].rest = !dayConfig[dayId].rest;
+  addFormOpenFor = null;
+  editFormOpenFor = null;
+  saveDayConfig();
+  refreshTabs();
+  renderDay(dayId);
+}
 
-  const heading = document.createElement('div');
-  heading.innerHTML = `<div class="day-heading">${day.label}<span class="code">${day.code}</span></div>`;
-  main.appendChild(heading);
+function removeExercise(dayId, exId){
+  dayConfig[dayId].exercises = dayConfig[dayId].exercises.filter(e=> e.id !== exId);
+  if(dayData[dayId]) delete dayData[dayId][exId];
+  if(editFormOpenFor === exId) editFormOpenFor = null;
+  saveDayConfig();
+  saveDay(dayId);
+  renderDay(dayId);
+}
 
-  const progress = document.createElement('div');
-  progress.className = 'day-progress';
-  main.appendChild(progress);
+function openAddForm(dayId){
+  editFormOpenFor = null;
+  addFormOpenFor = dayId;
+  renderDay(dayId);
+}
 
-  day.exercises.forEach(ex=>{
-    if(ex.type === 'cardio'){
-      const card = document.createElement('div');
-      card.className = 'card cardio-card';
-      const done = !!dayData[dayId][ex.id];
-      card.innerHTML = `
-        <div class="cardio-info">
-          <div class="ex-name" data-ex="${ex.id}">
-            <span class="ex-name-text">${getExName(ex)}</span>
-            <span class="edit-pencil" data-ex="${ex.id}">✎</span>
-          </div>
-          <div class="ex-prescription">${ex.prescription}</div>
+function exerciseFormHTML(ex){
+  const e = ex || { name:'', type:'weight', sets:3, prescription:'', restSec:120 };
+  const safeName = (e.name || '').replace(/"/g,'&quot;');
+  const safePres = (e.prescription || '').replace(/"/g,'&quot;');
+  const isCardio = e.type === 'cardio';
+  return `<div class="edit-panel">
+      <div class="edit-row">
+        <label>Name</label>
+        <input type="text" class="ex-form-name" value="${safeName}" placeholder="Exercise name">
+      </div>
+      <div class="edit-row">
+        <label>Type / load</label>
+        <select class="ex-form-type">
+          <option value="weight" ${e.type==='weight'?'selected':''}>Weight (lbs)</option>
+          <option value="hold" ${e.type==='hold'?'selected':''}>Hold (seconds)</option>
+          <option value="reps" ${e.type==='reps'?'selected':''}>Reps only</option>
+          <option value="cardio" ${e.type==='cardio'?'selected':''}>Cardio (minutes)</option>
+        </select>
+      </div>
+      <div class="edit-row ex-form-sets-row" style="${isCardio?'display:none;':''}">
+        <label>Sets</label>
+        <div class="stepper">
+          <div class="stepper-btn ex-form-sets-minus">−</div>
+          <div class="stepper-val ex-form-sets-val">${e.sets || 3}</div>
+          <div class="stepper-btn ex-form-sets-plus">+</div>
         </div>
-        <div class="check ${done ? 'done' : ''}" data-ex="${ex.id}">✓</div>
-      `;
-      card.querySelector('.check').onclick = (e)=>{
-        const cur = !!dayData[dayId][ex.id];
-        dayData[dayId][ex.id] = !cur;
-        e.target.classList.toggle('done', !cur);
-        saveDay(dayId);
-      };
-      main.appendChild(card);
+      </div>
+      <div class="edit-row">
+        <label>Prescription label</label>
+        <input type="text" class="ex-form-prescription" value="${safePres}" placeholder="e.g. 3 x 8-10 or 20 min">
+      </div>
+      <div class="edit-row ex-form-rest-row" style="${isCardio?'display:none;':''}">
+        <label>Rest time (seconds)</label>
+        <input type="number" inputmode="numeric" class="ex-form-rest" value="${e.restSec ?? 120}" min="0" step="5">
+      </div>
+      <div class="edit-actions">
+        <div class="edit-cancel">Cancel</div>
+        <div class="edit-save">${ex ? 'Save changes' : 'Add exercise'}</div>
+      </div>
+    </div>`;
+}
+
+function wireExerciseForm(panelEl, dayId, exId){
+  let setsVal = parseInt(panelEl.querySelector('.ex-form-sets-val').textContent, 10) || 3;
+  const typeSelect = panelEl.querySelector('.ex-form-type');
+  const setsRow = panelEl.querySelector('.ex-form-sets-row');
+  const restRow = panelEl.querySelector('.ex-form-rest-row');
+
+  typeSelect.addEventListener('change', ()=>{
+    const isCardio = typeSelect.value === 'cardio';
+    setsRow.style.display = isCardio ? 'none' : '';
+    restRow.style.display = isCardio ? 'none' : '';
+  });
+
+  panelEl.querySelector('.ex-form-sets-minus').addEventListener('click', ()=>{
+    setsVal = Math.max(1, setsVal - 1);
+    panelEl.querySelector('.ex-form-sets-val').textContent = setsVal;
+  });
+  panelEl.querySelector('.ex-form-sets-plus').addEventListener('click', ()=>{
+    setsVal = Math.min(6, setsVal + 1);
+    panelEl.querySelector('.ex-form-sets-val').textContent = setsVal;
+  });
+
+  panelEl.querySelector('.edit-cancel').addEventListener('click', ()=>{
+    if(exId){ editFormOpenFor = null; } else { addFormOpenFor = null; }
+    renderDay(dayId);
+  });
+
+  panelEl.querySelector('.edit-save').addEventListener('click', ()=>{
+    const name = panelEl.querySelector('.ex-form-name').value.trim();
+    const type = typeSelect.value;
+    const prescription = panelEl.querySelector('.ex-form-prescription').value.trim();
+    const restSec = parseInt(panelEl.querySelector('.ex-form-rest').value, 10) || 0;
+    const sets = setsVal;
+
+    if(!name){
+      panelEl.querySelector('.ex-form-name').focus();
       return;
     }
 
-    const values = dayData[dayId][ex.id] || [null, null, null];
+    if(exId){
+      const ex = dayConfig[dayId].exercises.find(x=> x.id === exId);
+      if(!ex) return;
+      const typeChanged = ex.type !== type;
+      const setsChanged = type !== 'cardio' && ex.sets !== sets;
+      ex.name = name;
+      ex.type = type;
+      ex.prescription = prescription || ex.prescription;
+      if(type !== 'cardio'){
+        ex.sets = sets;
+        ex.restSec = restSec;
+      } else {
+        delete ex.sets;
+        delete ex.restSec;
+      }
+      if(typeChanged || setsChanged){
+        if(!dayData[dayId]) dayData[dayId] = {};
+        dayData[dayId][exId] = (type === 'cardio') ? false : Array(sets).fill(null);
+      }
+      editFormOpenFor = null;
+    } else {
+      const id = generateExerciseId(name);
+      const defaultPrescription = type === 'cardio' ? '20 min' : (type === 'hold' ? `${sets} x 15s` : `${sets} x 8-10`);
+      const newEx = {
+        id, name, type,
+        prescription: prescription || defaultPrescription
+      };
+      if(type !== 'cardio'){
+        newEx.sets = sets;
+        newEx.restSec = restSec;
+      }
+      dayConfig[dayId].exercises.push(newEx);
+      if(dayConfig[dayId].rest) dayConfig[dayId].rest = false;
+      if(!dayData[dayId]) dayData[dayId] = {};
+      dayData[dayId][id] = (type === 'cardio') ? false : Array(sets).fill(null);
+      addFormOpenFor = null;
+    }
+
+    saveDayConfig();
+    saveDay(dayId);
+    refreshTabs();
+    renderDay(dayId);
+  });
+}
+
+function renderExerciseCard(dayId, ex){
+  const card = document.createElement('div');
+
+  if(ex.type === 'cardio'){
+    card.className = 'card cardio-card';
+    const done = !!(dayData[dayId] && dayData[dayId][ex.id]);
+    card.innerHTML = `
+      <div class="cardio-info">
+        <div class="ex-name" data-ex="${ex.id}">
+          <span class="ex-name-text">${ex.name}</span>
+          <span class="edit-pencil" data-ex="${ex.id}">✎</span>
+        </div>
+        <div class="ex-prescription">${ex.prescription}</div>
+      </div>
+      <div class="card-actions">
+        <div class="gear-btn" data-ex="${ex.id}">⚙</div>
+        <div class="remove-btn" data-ex="${ex.id}">✕</div>
+        <div class="check ${done ? 'done' : ''}" data-ex="${ex.id}">✓</div>
+      </div>
+    `;
+    card.querySelector('.check').addEventListener('click', (e)=>{
+      if(!dayData[dayId]) dayData[dayId] = {};
+      const cur = !!dayData[dayId][ex.id];
+      dayData[dayId][ex.id] = !cur;
+      e.target.classList.toggle('done', !cur);
+      saveDay(dayId);
+    });
+  } else {
+    card.className = 'card';
+    const sets = ex.sets || 3;
+    const values = (dayData[dayId] && dayData[dayId][ex.id]) || [];
     const isHold = ex.type === 'hold';
-    const isReps = ex.type === 'reps';
     const isWeight = ex.type === 'weight';
-    const tag = isHold ? 'HOLD' : (isReps ? 'REPS' : 'LOAD');
+    const tag = isHold ? 'HOLD' : (isWeight ? 'LOAD' : 'REPS');
 
     let setsHtml = '';
     if(isWeight){
-      setsHtml = [0,1,2].map(i=>{
+      setsHtml = Array.from({length: sets}).map((_, i)=>{
         const v = (values[i] && typeof values[i] === 'object') ? values[i] : {};
         return `
           <div class="set-input-wrap">
@@ -934,8 +1296,8 @@ function renderDay(dayId){
       }).join('');
     } else {
       const unit = isHold ? 's' : 'reps';
-      setsHtml = [0,1,2].map(i=>{
-        const v = (values[i] !== null && typeof values[i] !== 'object') ? values[i] : '';
+      setsHtml = Array.from({length: sets}).map((_, i)=>{
+        const v = (values[i] !== undefined && values[i] !== null && typeof values[i] !== 'object') ? values[i] : '';
         return `
           <div class="set-input-wrap">
             <span class="set-label">Set ${i+1}</span>
@@ -946,37 +1308,41 @@ function renderDay(dayId){
       }).join('');
     }
 
-    const card = document.createElement('div');
-    card.className = 'card';
     card.innerHTML = `
       <div class="card-top">
         <div>
           <div class="ex-name" data-ex="${ex.id}">
-            <span class="ex-name-text">${getExName(ex)}</span>
+            <span class="ex-name-text">${ex.name}</span>
             <span class="edit-pencil" data-ex="${ex.id}">✎</span>
           </div>
           <div class="ex-prescription">${ex.prescription}</div>
         </div>
-        <div class="ex-type-tag">${tag}</div>
+        <div class="card-actions">
+          <div class="ex-type-tag">${tag}</div>
+          <div class="gear-btn" data-ex="${ex.id}">⚙</div>
+          <div class="remove-btn" data-ex="${ex.id}">✕</div>
+        </div>
       </div>
       <div class="sets-row">
         ${setsHtml}
       </div>
       <div class="rest-row">
         <span class="rest-label">Rest</span>
-        <div class="rest-timer" data-ex="${ex.id}" data-seconds="${ex.restSec}">
+        <div class="rest-timer" data-ex="${ex.id}" data-seconds="${ex.restSec || 120}">
           <div class="rest-fill" data-ex="${ex.id}"></div>
-          <span class="rest-text" data-ex="${ex.id}">${formatTime(ex.restSec)}</span>
+          <span class="rest-text" data-ex="${ex.id}">${formatTime(ex.restSec || 120)}</span>
         </div>
       </div>
     `;
+
     card.querySelectorAll('.set-input').forEach(input=>{
       input.addEventListener('change', (e)=>{
         const exId = e.target.dataset.ex;
-        const setIdx = parseInt(e.target.dataset.set,10);
+        const setIdx = parseInt(e.target.dataset.set, 10);
         const field = e.target.dataset.field;
+        if(!dayData[dayId]) dayData[dayId] = {};
         if(!dayData[dayId][exId] || !Array.isArray(dayData[dayId][exId])){
-          dayData[dayId][exId] = [null, null, null];
+          dayData[dayId][exId] = Array(sets).fill(null);
         }
         if(field === 'v'){
           dayData[dayId][exId][setIdx] = e.target.value;
@@ -989,19 +1355,116 @@ function renderDay(dayId){
         saveDay(dayId);
       });
     });
-    main.appendChild(card);
+
+    card.querySelector('.rest-timer').addEventListener('click', ()=>{
+      toggleTimer(ex.id, ex.restSec || 120);
+    });
+  }
+
+  // rename via pencil (applies to ex.name directly, saved with dayConfig)
+  card.querySelector('.edit-pencil').addEventListener('click', (e)=>{
+    const nameEl = e.target.previousElementSibling;
+    startEditingName(nameEl, dayId, ex.id);
   });
+
+  // gear -> open/close full edit panel
+  card.querySelector('.gear-btn').addEventListener('click', ()=>{
+    editFormOpenFor = (editFormOpenFor === ex.id) ? null : ex.id;
+    renderDay(dayId);
+  });
+
+  // remove, with a two-tap confirm (no browser confirm() — blocked in sandboxed views)
+  const removeBtn = card.querySelector('.remove-btn');
+  removeBtn.addEventListener('click', ()=>{
+    if(removeBtn.classList.contains('confirm')){
+      removeExercise(dayId, ex.id);
+    } else {
+      removeBtn.classList.add('confirm');
+      removeBtn.textContent = 'sure?';
+      setTimeout(()=>{
+        removeBtn.classList.remove('confirm');
+        removeBtn.textContent = '✕';
+      }, 2500);
+    }
+  });
+
+  if(editFormOpenFor === ex.id){
+    const wrap = document.createElement('div');
+    wrap.innerHTML = exerciseFormHTML(ex);
+    const panelEl = wrap.firstElementChild;
+    card.appendChild(panelEl);
+    wireExerciseForm(panelEl, dayId, ex.id);
+  }
+
+  return card;
+}
+
+function renderDay(dayId){
+  const dc = dayConfig[dayId];
+  const dayMeta = DEFAULT_DAYS.find(d=> d.id === dayId);
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  const heading = document.createElement('div');
+  heading.innerHTML = `
+    <div class="day-heading">
+      ${dayMeta.label}
+      <span class="code" tabindex="0">${dc.code}</span>
+      <span class="edit-pencil day-code-pencil">✎</span>
+    </div>`;
+  main.appendChild(heading);
+  heading.querySelector('.day-code-pencil').addEventListener('click', ()=>{
+    startEditingDayCode(heading.querySelector('.code'), dayId);
+  });
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'day-toolbar';
+  toolbar.innerHTML = `
+    <div class="day-progress" id="day-progress-text"></div>
+    <div class="rest-toggle-btn ${dc.rest ? 'active' : ''}" id="rest-toggle-btn">${dc.rest ? '☾ Rest day' : '⇄ Make rest day'}</div>
+  `;
+  main.appendChild(toolbar);
+  toolbar.querySelector('#rest-toggle-btn').addEventListener('click', ()=> toggleDayRest(dayId));
+  const progressEl = toolbar.querySelector('#day-progress-text');
+
+  if(dc.rest){
+    const restPanel = document.createElement('div');
+    restPanel.className = 'rest-panel';
+    restPanel.innerHTML = `
+      <div class="big">Decompression Day</div>
+      <div class="small">${dc.exercises.length ? dc.exercises.length + ' saved exercise(s) hidden — switch to workout to see them' : 'no lifts logged here'}</div>`;
+    main.appendChild(restPanel);
+  } else {
+    dc.exercises.forEach(ex=>{
+      main.appendChild(renderExerciseCard(dayId, ex));
+    });
+  }
+
+  if(addFormOpenFor === dayId){
+    const formCard = document.createElement('div');
+    formCard.className = 'card';
+    formCard.innerHTML = exerciseFormHTML(null);
+    main.appendChild(formCard);
+    wireExerciseForm(formCard, dayId, null);
+  } else {
+    const addBtn = document.createElement('div');
+    addBtn.className = 'add-exercise-btn';
+    addBtn.textContent = '+ Add exercise';
+    addBtn.addEventListener('click', ()=> openAddForm(dayId));
+    main.appendChild(addBtn);
+  }
 
   // progress readout
   let totalFields = 0;
   let filled = 0;
-  day.exercises.forEach(ex=>{
+  dc.exercises.forEach(ex=>{
     if(ex.type === 'cardio'){
       totalFields += 1;
-      if(dayData[dayId][ex.id]) filled += 1;
+      if(dayData[dayId] && dayData[dayId][ex.id]) filled += 1;
     } else if(ex.type === 'weight'){
-      totalFields += 6; // 3 sets x (weight + reps)
-      const v = dayData[dayId][ex.id];
+      const n = ex.sets || 3;
+      totalFields += n * 2;
+      const v = dayData[dayId] && dayData[dayId][ex.id];
       if(Array.isArray(v)){
         v.forEach(entry=>{
           if(entry && typeof entry === 'object'){
@@ -1011,47 +1474,31 @@ function renderDay(dayId){
         });
       }
     } else {
-      totalFields += 3; // hold or reps-only
-      const v = dayData[dayId][ex.id];
-      if(Array.isArray(v)) filled += v.filter(x=>x!=='' && x!=null && typeof x !== 'object').length;
+      const n = ex.sets || 3;
+      totalFields += n;
+      const v = dayData[dayId] && dayData[dayId][ex.id];
+      if(Array.isArray(v)) filled += v.filter(x=> x !== '' && x != null && typeof x !== 'object').length;
     }
   });
-  progress.textContent = `${filled} / ${totalFields} FIELDS LOGGED`;
-
-  // wire up rename-on-tap for every exercise name
-  main.querySelectorAll('.edit-pencil').forEach(pencil=>{
-    pencil.addEventListener('click', (e)=>{
-      const exId = e.target.dataset.ex;
-      const nameEl = e.target.previousElementSibling;
-      startEditingName(nameEl, exId);
-    });
-  });
-
-  // wire up rest timers
-  main.querySelectorAll('.rest-timer').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const exId = el.dataset.ex;
-      const total = parseInt(el.dataset.seconds, 10);
-      toggleTimer(exId, total);
-    });
-  });
+  progressEl.textContent = dc.rest ? '' : `${filled} / ${totalFields} FIELDS LOGGED`;
 }
 
-function startEditingName(nameEl, exId){
+function startEditingName(nameEl, dayId, exId){
   if(nameEl.classList.contains('editing')) return;
   const original = nameEl.textContent;
   nameEl.classList.add('editing');
   nameEl.contentEditable = 'true';
   nameEl.focus();
-  document.execCommand && placeCaretAtEnd(nameEl);
+  placeCaretAtEnd(nameEl);
 
   function finish(){
     nameEl.classList.remove('editing');
     nameEl.contentEditable = 'false';
     const newName = nameEl.textContent.trim();
-    if(newName && newName !== original){
-      customNames[exId] = newName;
-      saveCustomNames();
+    const ex = dayConfig[dayId].exercises.find(e=> e.id === exId);
+    if(newName && ex && newName !== ex.name){
+      ex.name = newName;
+      saveDayConfig();
     } else if(!newName){
       nameEl.textContent = original;
     }
@@ -1065,6 +1512,35 @@ function startEditingName(nameEl, exId){
   nameEl.addEventListener('keydown', onKey);
 }
 
+function startEditingDayCode(codeEl, dayId){
+  if(codeEl.classList.contains('editing')) return;
+  const original = codeEl.textContent;
+  codeEl.classList.add('editing');
+  codeEl.contentEditable = 'true';
+  codeEl.focus();
+  placeCaretAtEnd(codeEl);
+
+  function finish(){
+    codeEl.classList.remove('editing');
+    codeEl.contentEditable = 'false';
+    const val = codeEl.textContent.trim().toUpperCase();
+    if(val && val !== dayConfig[dayId].code){
+      dayConfig[dayId].code = val;
+      saveDayConfig();
+      refreshTabs();
+    } else if(!val){
+      codeEl.textContent = original;
+    }
+    codeEl.removeEventListener('blur', finish);
+    codeEl.removeEventListener('keydown', onKey);
+  }
+  function onKey(e){
+    if(e.key === 'Enter'){ e.preventDefault(); codeEl.blur(); }
+  }
+  codeEl.addEventListener('blur', finish);
+  codeEl.addEventListener('keydown', onKey);
+}
+
 function placeCaretAtEnd(el){
   const range = document.createRange();
   const sel = window.getSelection();
@@ -1076,7 +1552,7 @@ function placeCaretAtEnd(el){
 
 function currentDayId(){
   const idx = new Date().getDay(); // 0=Sun
-  return DAYS[idx].id;
+  return DEFAULT_DAYS[idx].id;
 }
 
 document.getElementById('odo-minus').onclick = ()=>{
@@ -1117,9 +1593,9 @@ odoInput.addEventListener('keydown', (e)=>{
 
 async function init(){
   document.getElementById('today-label').textContent = todayLabel();
-  buildTabs();
   document.getElementById('main').innerHTML = `<div class="loading-state">Loading your data…</div>`;
   await loadAll();
+  buildTabs();
   setActiveDay(currentDayId());
   updateSyncBadge();
   flushPendingQueue();
@@ -1130,7 +1606,7 @@ document.getElementById('export-backup').addEventListener('click', ()=>{
   const backup = {
     exportedAt: new Date().toISOString(),
     sessions: sessions,
-    customNames: customNames,
+    dayConfig: dayConfig,
     dayData: dayData
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
