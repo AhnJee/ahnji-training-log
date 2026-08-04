@@ -715,39 +715,39 @@ const DEFAULT_DAYS = [
   { id:'sun', label:'Sunday', code:'PUSH A', rest:false, exercises:[
     { id:'adv-tuck-planche', name:'Adv Tuck Planche', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
     { id:'planche-pushup', name:'Planche Push Up', prescription:'3 x 4-6', type:'reps', sets:3, restSec:180 },
-    { id:'lateral-raise-a', name:'Lateral Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
+    { id:'lateral-raise-a', name:'Lateral Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120, unit:'lb' },
     { id:'cardio-sun', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'mon', label:'Monday', code:'PULL A', rest:false, exercises:[
     { id:'adv-tuck-front-lever', name:'Adv Tuck Front Lever', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
-    { id:'weighted-pullup', name:'Weighted Pull Up', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180 },
-    { id:'hammer-curl', name:'Hammer Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
+    { id:'weighted-pullup', name:'Weighted Pull Up', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180, unit:'lb' },
+    { id:'hammer-curl', name:'Hammer Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120, unit:'lb' },
     { id:'cardio-mon', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'tue', label:'Tuesday', code:'LEGS A', rest:false, exercises:[
-    { id:'squat', name:'Squat', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180 },
-    { id:'hamstring-curl-a', name:'Hamstring Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
-    { id:'standing-calf-raise', name:'Standing Calf Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
-    { id:'hanging-leg-raise', name:'Hanging Leg Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120 },
+    { id:'squat', name:'Squat', prescription:'3 x 4-6', type:'weight', sets:3, restSec:180, unit:'lb' },
+    { id:'hamstring-curl-a', name:'Hamstring Curl', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120, unit:'lb' },
+    { id:'standing-calf-raise', name:'Standing Calf Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120, unit:'lb' },
+    { id:'hanging-leg-raise', name:'Hanging Leg Raise', prescription:'3 x 8-10', type:'weight', sets:3, restSec:120, unit:'lb' },
     { id:'cardio-tue', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
   ]},
   { id:'wed', label:'Wednesday', code:'PUSH B', rest:false, exercises:[
     { id:'tuck-planche', name:'Tuck Planche', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
-    { id:'incline-bench', name:'Incline Bench Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
-    { id:'lateral-raise-b', name:'Lateral Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
+    { id:'incline-bench', name:'Incline Bench Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180, unit:'lb' },
+    { id:'lateral-raise-b', name:'Lateral Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90, unit:'lb' },
     { id:'cardio-wed', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'thu', label:'Thursday', code:'PULL B', rest:false, exercises:[
     { id:'tuck-lever', name:'Tuck Lever', prescription:'3 x 15s', type:'hold', sets:3, restSec:180 },
-    { id:'seated-cable-row', name:'Seated Cable Row', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
-    { id:'bicep-curl', name:'Bicep Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
+    { id:'seated-cable-row', name:'Seated Cable Row', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180, unit:'lb' },
+    { id:'bicep-curl', name:'Bicep Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90, unit:'lb' },
     { id:'cardio-thu', name:'Zone 2 Cardio', prescription:'20 min', type:'cardio' },
   ]},
   { id:'fri', label:'Friday', code:'LEGS B', rest:false, exercises:[
-    { id:'leg-press', name:'Leg Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180 },
-    { id:'hamstring-curl-b', name:'Hamstring Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
-    { id:'seated-calf-raise', name:'Seated Calf Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
-    { id:'knee-raise', name:'Knee Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90 },
+    { id:'leg-press', name:'Leg Press', prescription:'3 x 8-12', type:'weight', sets:3, restSec:180, unit:'lb' },
+    { id:'hamstring-curl-b', name:'Hamstring Curl', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90, unit:'lb' },
+    { id:'seated-calf-raise', name:'Seated Calf Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90, unit:'lb' },
+    { id:'knee-raise', name:'Knee Raise', prescription:'3 x 12-15', type:'weight', sets:3, restSec:90, unit:'lb' },
     { id:'cardio-fri', name:'Zone 2 Cardio', prescription:'10 min', type:'cardio' },
   ]},
   { id:'sat', label:'Saturday', code:'REST', rest:true, exercises:[] },
@@ -762,7 +762,7 @@ const CONFIG = {
 };
 
 let dayData = {};     // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
-let dayConfig = {};   // { dayId: { rest, code, exercises:[{id,name,type,sets,prescription,restSec}] } }
+let dayConfig = {};   // { dayId: { rest, code, exercises:[{id,name,type,sets,prescription,restSec,unit}] } }
 let sessions = 0;
 let activeDay = null;
 let toastTimer = null;
@@ -1010,7 +1010,7 @@ async function loadAll(){
   }catch(e){}
 
   // Saved custom day config (exercise list, rest flag, code, per-exercise
-  // sets/prescription/rest/type) fully overrides the defaults per day.
+  // sets/prescription/rest/type/unit) fully overrides the defaults per day.
   try{
     const savedConfig = rawDayConfig ? JSON.parse(rawDayConfig) : null;
     if(savedConfig){
@@ -1019,6 +1019,13 @@ async function loadAll(){
       });
     }
   }catch(e){}
+
+  // Backfill unit for any weight exercise that predates the kg/lb option
+  Object.values(dayConfig).forEach(dc=>{
+    dc.exercises.forEach(ex=>{
+      if(ex.type === 'weight' && !ex.unit) ex.unit = 'lb';
+    });
+  });
 
   DEFAULT_DAYS.forEach((day, i)=>{
     try{
@@ -1118,10 +1125,12 @@ function openAddForm(dayId){
 }
 
 function exerciseFormHTML(ex){
-  const e = ex || { name:'', type:'weight', sets:3, prescription:'', restSec:120 };
+  const e = ex || { name:'', type:'weight', sets:3, prescription:'', restSec:120, unit:'lb' };
   const safeName = (e.name || '').replace(/"/g,'&quot;');
   const safePres = (e.prescription || '').replace(/"/g,'&quot;');
   const isCardio = e.type === 'cardio';
+  const isWeight = e.type === 'weight';
+  const unit = e.unit || 'lb';
   return `<div class="edit-panel">
       <div class="edit-row">
         <label>Name</label>
@@ -1130,10 +1139,17 @@ function exerciseFormHTML(ex){
       <div class="edit-row">
         <label>Type / load</label>
         <select class="ex-form-type">
-          <option value="weight" ${e.type==='weight'?'selected':''}>Weight (lbs)</option>
+          <option value="weight" ${e.type==='weight'?'selected':''}>Weight (load)</option>
           <option value="hold" ${e.type==='hold'?'selected':''}>Hold (seconds)</option>
           <option value="reps" ${e.type==='reps'?'selected':''}>Reps only</option>
           <option value="cardio" ${e.type==='cardio'?'selected':''}>Cardio (minutes)</option>
+        </select>
+      </div>
+      <div class="edit-row ex-form-unit-row" style="${isWeight?'':'display:none;'}">
+        <label>Weight unit</label>
+        <select class="ex-form-unit">
+          <option value="lb" ${unit==='lb'?'selected':''}>Pounds (lb)</option>
+          <option value="kg" ${unit==='kg'?'selected':''}>Kilograms (kg)</option>
         </select>
       </div>
       <div class="edit-row ex-form-sets-row" style="${isCardio?'display:none;':''}">
@@ -1164,11 +1180,14 @@ function wireExerciseForm(panelEl, dayId, exId){
   const typeSelect = panelEl.querySelector('.ex-form-type');
   const setsRow = panelEl.querySelector('.ex-form-sets-row');
   const restRow = panelEl.querySelector('.ex-form-rest-row');
+  const unitRow = panelEl.querySelector('.ex-form-unit-row');
 
   typeSelect.addEventListener('change', ()=>{
     const isCardio = typeSelect.value === 'cardio';
+    const isWeight = typeSelect.value === 'weight';
     setsRow.style.display = isCardio ? 'none' : '';
     restRow.style.display = isCardio ? 'none' : '';
+    unitRow.style.display = isWeight ? '' : 'none';
   });
 
   panelEl.querySelector('.ex-form-sets-minus').addEventListener('click', ()=>{
@@ -1191,6 +1210,7 @@ function wireExerciseForm(panelEl, dayId, exId){
     const prescription = panelEl.querySelector('.ex-form-prescription').value.trim();
     const restSec = parseInt(panelEl.querySelector('.ex-form-rest').value, 10) || 0;
     const sets = setsVal;
+    const unit = panelEl.querySelector('.ex-form-unit').value;
 
     if(!name){
       panelEl.querySelector('.ex-form-name').focus();
@@ -1202,6 +1222,7 @@ function wireExerciseForm(panelEl, dayId, exId){
       if(!ex) return;
       const typeChanged = ex.type !== type;
       const setsChanged = type !== 'cardio' && ex.sets !== sets;
+      const unitChanged = type === 'weight' && ex.unit !== unit;
       ex.name = name;
       ex.type = type;
       ex.prescription = prescription || ex.prescription;
@@ -1212,9 +1233,17 @@ function wireExerciseForm(panelEl, dayId, exId){
         delete ex.sets;
         delete ex.restSec;
       }
+      if(type === 'weight'){
+        ex.unit = unit;
+      } else {
+        delete ex.unit;
+      }
       if(typeChanged || setsChanged){
         if(!dayData[dayId]) dayData[dayId] = {};
         dayData[dayId][exId] = (type === 'cardio') ? false : Array(sets).fill(null);
+      } else if(unitChanged){
+        // Values stay as raw numbers — just relabeled; no conversion is
+        // attempted since past entries were logged in the old unit.
       }
       editFormOpenFor = null;
     } else {
@@ -1227,6 +1256,9 @@ function wireExerciseForm(panelEl, dayId, exId){
       if(type !== 'cardio'){
         newEx.sets = sets;
         newEx.restSec = restSec;
+      }
+      if(type === 'weight'){
+        newEx.unit = unit;
       }
       dayConfig[dayId].exercises.push(newEx);
       if(dayConfig[dayId].rest) dayConfig[dayId].rest = false;
@@ -1275,6 +1307,7 @@ function renderExerciseCard(dayId, ex){
     const values = (dayData[dayId] && dayData[dayId][ex.id]) || [];
     const isHold = ex.type === 'hold';
     const isWeight = ex.type === 'weight';
+    const weightUnit = ex.unit || 'lb';
     const tag = isHold ? 'HOLD' : (isWeight ? 'LOAD' : 'REPS');
 
     let setsHtml = '';
@@ -1291,7 +1324,7 @@ function renderExerciseCard(dayId, ex){
               <input class="set-input" type="number" inputmode="numeric"
                 data-ex="${ex.id}" data-set="${i}" data-field="r" value="${v.r ?? ''}" placeholder="0">
             </div>
-            <div class="dual-units"><span>lb</span><span>reps</span></div>
+            <div class="dual-units"><span>${weightUnit}</span><span>reps</span></div>
           </div>`;
       }).join('');
     } else {
@@ -1318,7 +1351,7 @@ function renderExerciseCard(dayId, ex){
           <div class="ex-prescription">${ex.prescription}</div>
         </div>
         <div class="card-actions">
-          <div class="ex-type-tag">${tag}</div>
+          <div class="ex-type-tag">${tag}${isWeight ? ' · ' + weightUnit.toUpperCase() : ''}</div>
           <div class="gear-btn" data-ex="${ex.id}">⚙</div>
           <div class="remove-btn" data-ex="${ex.id}">✕</div>
         </div>
