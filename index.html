@@ -759,7 +759,7 @@ const DEFAULT_DAYS = [
 // See apps-script-backend.gs for setup steps. Leave blank to run on
 // localStorage only (data stays on this device/browser).
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxR0ORvcBMBk1v0OqcKqOBCvmEO_pqeUJwHxISAKq7177sGaxPfB4b0eX6Y9EgwC1o34A/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwuKJv_BGx7AeXQrfLBk7h9XrsXlnAx1UhqX0LttaT32JLmne4oIeURn0EDPcoS0_GCug/exec'
 };
 
 let dayData = {};     // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
@@ -1147,6 +1147,7 @@ function openAddForm(dayId){
 function exerciseFormHTML(ex){
   const e = ex || { name:'', type:'reps', sets:3, prescription:'', restSec:120, unit:'lb' };
   const safeName = (e.name || '').replace(/"/g,'&quot;');
+  const safePres = (e.prescription || '').replace(/"/g,'&quot;');
   const isCardio = e.type === 'cardio';
   const isWeight = e.type === 'weight';
   const unit = e.unit || 'lb';
@@ -1178,6 +1179,10 @@ function exerciseFormHTML(ex){
           <div class="stepper-val ex-form-sets-val">${e.sets || 3}</div>
           <div class="stepper-btn ex-form-sets-plus">+</div>
         </div>
+      </div>
+      <div class="edit-row">
+        <label>Prescription label <span style="opacity:0.6;">(optional)</span></label>
+        <input type="text" class="ex-form-prescription" value="${safePres}" placeholder="e.g. 3 x 8-10 or 20 min — leave blank for none">
       </div>
       <div class="edit-row ex-form-rest-row" style="${isCardio?'display:none;':''}">
         <label>Rest time (seconds)</label>
@@ -1222,10 +1227,10 @@ function wireExerciseForm(panelEl, dayId, exId){
   panelEl.querySelector('.edit-save').addEventListener('click', ()=>{
     const name = panelEl.querySelector('.ex-form-name').value.trim();
     const type = typeSelect.value;
+    const prescription = panelEl.querySelector('.ex-form-prescription').value.trim();
     const restSec = parseInt(panelEl.querySelector('.ex-form-rest').value, 10) || 0;
     const sets = setsVal;
     const unit = panelEl.querySelector('.ex-form-unit').value;
-    const autoPrescription = type === 'cardio' ? '20 min' : (type === 'hold' ? `${sets} x 15s` : `${sets} x 8-10`);
 
     if(!name){
       panelEl.querySelector('.ex-form-name').focus();
@@ -1240,7 +1245,7 @@ function wireExerciseForm(panelEl, dayId, exId){
       const unitChanged = type === 'weight' && ex.unit !== unit;
       ex.name = name;
       ex.type = type;
-      ex.prescription = autoPrescription;
+      ex.prescription = prescription;
       if(type !== 'cardio'){
         ex.sets = sets;
         ex.restSec = restSec;
@@ -1265,7 +1270,7 @@ function wireExerciseForm(panelEl, dayId, exId){
       const id = generateExerciseId(name);
       const newEx = {
         id, name, type,
-        prescription: autoPrescription
+        prescription: prescription
       };
       if(type !== 'cardio'){
         newEx.sets = sets;
@@ -1300,7 +1305,7 @@ function renderExerciseCard(dayId, ex){
           <span class="ex-name-text">${ex.name}</span>
           <span class="edit-pencil" data-ex="${ex.id}">✎</span>
         </div>
-        <div class="ex-prescription">${ex.prescription}</div>
+        ${ex.prescription ? `<div class="ex-prescription">${ex.prescription}</div>` : ''}
       </div>
       <div class="card-actions">
         <div class="gear-btn" data-ex="${ex.id}">⚙</div>
@@ -1362,7 +1367,7 @@ function renderExerciseCard(dayId, ex){
             <span class="ex-name-text">${ex.name}</span>
             <span class="edit-pencil" data-ex="${ex.id}">✎</span>
           </div>
-          <div class="ex-prescription">${ex.prescription}</div>
+          ${ex.prescription ? `<div class="ex-prescription">${ex.prescription}</div>` : ''}
         </div>
         <div class="card-actions">
           <div class="ex-type-tag">${tag}${isWeight ? ' · ' + weightUnit.toUpperCase() : ''}</div>
