@@ -1125,9 +1125,8 @@ function openAddForm(dayId){
 }
 
 function exerciseFormHTML(ex){
-  const e = ex || { name:'', type:'weight', sets:3, prescription:'', restSec:120, unit:'lb' };
+  const e = ex || { name:'', type:'reps', sets:3, prescription:'', restSec:120, unit:'lb' };
   const safeName = (e.name || '').replace(/"/g,'&quot;');
-  const safePres = (e.prescription || '').replace(/"/g,'&quot;');
   const isCardio = e.type === 'cardio';
   const isWeight = e.type === 'weight';
   const unit = e.unit || 'lb';
@@ -1159,10 +1158,6 @@ function exerciseFormHTML(ex){
           <div class="stepper-val ex-form-sets-val">${e.sets || 3}</div>
           <div class="stepper-btn ex-form-sets-plus">+</div>
         </div>
-      </div>
-      <div class="edit-row">
-        <label>Prescription label</label>
-        <input type="text" class="ex-form-prescription" value="${safePres}" placeholder="e.g. 3 x 8-10 or 20 min">
       </div>
       <div class="edit-row ex-form-rest-row" style="${isCardio?'display:none;':''}">
         <label>Rest time (seconds)</label>
@@ -1207,10 +1202,10 @@ function wireExerciseForm(panelEl, dayId, exId){
   panelEl.querySelector('.edit-save').addEventListener('click', ()=>{
     const name = panelEl.querySelector('.ex-form-name').value.trim();
     const type = typeSelect.value;
-    const prescription = panelEl.querySelector('.ex-form-prescription').value.trim();
     const restSec = parseInt(panelEl.querySelector('.ex-form-rest').value, 10) || 0;
     const sets = setsVal;
     const unit = panelEl.querySelector('.ex-form-unit').value;
+    const autoPrescription = type === 'cardio' ? '20 min' : (type === 'hold' ? `${sets} x 15s` : `${sets} x 8-10`);
 
     if(!name){
       panelEl.querySelector('.ex-form-name').focus();
@@ -1225,7 +1220,7 @@ function wireExerciseForm(panelEl, dayId, exId){
       const unitChanged = type === 'weight' && ex.unit !== unit;
       ex.name = name;
       ex.type = type;
-      ex.prescription = prescription || ex.prescription;
+      ex.prescription = autoPrescription;
       if(type !== 'cardio'){
         ex.sets = sets;
         ex.restSec = restSec;
@@ -1248,10 +1243,9 @@ function wireExerciseForm(panelEl, dayId, exId){
       editFormOpenFor = null;
     } else {
       const id = generateExerciseId(name);
-      const defaultPrescription = type === 'cardio' ? '20 min' : (type === 'hold' ? `${sets} x 15s` : `${sets} x 8-10`);
       const newEx = {
         id, name, type,
-        prescription: prescription || defaultPrescription
+        prescription: autoPrescription
       };
       if(type !== 'cardio'){
         newEx.sets = sets;
