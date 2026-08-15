@@ -65,6 +65,7 @@
     border-radius:10px;
     border:1px solid var(--line);
     color:var(--muted);
+    cursor:pointer;
   }
   .sync-badge.sheet{color:var(--matcha-bright);border-color:var(--matcha);}
   .sync-badge.local{color:#d8c6a3;border-color:var(--rest);}
@@ -758,7 +759,7 @@ const DEFAULT_DAYS = [
 // See apps-script-backend.gs for setup steps. Leave blank to run on
 // localStorage only (data stays on this device/browser).
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxMMZdC4fLpA1cNqJh9DdDPgb8N_29L-Ou920B-aQ33yU0B5_pvEX49iPEz-v09AzOO3A/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwuKJv_BGx7AeXQrfLBk7h9XrsXlnAx1UhqX0LttaT32JLmne4oIeURn0EDPcoS0_GCug/exec'
 };
 
 let dayData = {};     // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
@@ -850,18 +851,37 @@ async function flushPendingQueue(){
 
 const store = {
   async get(key){
+    // A queued (unsynced) local write means this key has a change the
+    // backend has never successfully received. Trusting a remote read here
+    // would silently discard that pending edit — so pending always wins.
+    const pending = getQueue();
+    if(key in pending){
+      storageMode = 'pending';
+      try{ localStorage.setItem(key, pending[key]); }catch(e){}
+      return pending[key];
+    }
     if(CONFIG.API_URL){
       try{
         const res = await fetchWithTimeout(`${CONFIG.API_URL}?key=${encodeURIComponent(key)}`);
+        if(!res.ok) throw new Error('bad status ' + res.status);
         const data = await res.json();
+        if(typeof data !== 'object' || data === null) throw new Error('malformed response');
         storageMode = 'sheet';
         if(data.value !== undefined && data.value !== null){
           try{ localStorage.setItem(key, data.value); }catch(e){}
           return data.value;
         }
+        // Backend explicitly has no value for this key — only trust that
+        // if there's no local copy either; otherwise a fresh/empty backend
+        // (e.g. redeployed under a new URL) would wipe existing local data.
+        try{
+          const localVal = localStorage.getItem(key);
+          if(localVal !== null){ storageMode = 'local'; return localVal; }
+        }catch(e){}
         return null;
       }catch(e){
-        // fall through to local cache (timeout, offline, or backend error)
+        console.warn('Sheet read failed for', key, '— using local cache.', e);
+        // fall through to local cache (timeout, offline, 404, or malformed response)
       }
     }
     try{
@@ -1671,6 +1691,15 @@ function updateSyncBadge(){
 // regains a connection, and every 30s as a safety net.
 window.addEventListener('online', flushPendingQueue);
 setInterval(flushPendingQueue, 30000);
+
+document.getElementById('sync-badge').addEventListener('click', async ()=>{
+  if(queueSize() === 0 && storageMode === 'sheet') return;
+  showToast('retrying sync…');
+  await flushPendingQueue();
+  if(queueSize() > 0){
+    showToast(`still ${queueSize()} pending — check console`);
+  }
+});
 </script>
 </body>
 </html>
