@@ -331,6 +331,25 @@
     flex-shrink:0;
   }
   .gear-btn:active{color:var(--matcha-bright);}
+  .drag-handle{
+    font-size:15px;
+    color:var(--muted);
+    cursor:grab;
+    padding:2px 5px;
+    flex-shrink:0;
+    touch-action:none;
+    user-select:none;
+    line-height:1;
+  }
+  .drag-handle:active{color:var(--matcha-bright);cursor:grabbing;}
+  .exercise-list{
+    position:relative;
+  }
+  .card.dragging{
+    box-shadow:0 8px 20px rgba(0,0,0,0.5);
+    border-color:var(--matcha);
+    opacity:0.95;
+  }
   .remove-btn{
     font-family:'JetBrains Mono',monospace;
     font-size:11px;
@@ -1298,6 +1317,7 @@ function renderExerciseCard(dayId, ex){
 
   if(ex.type === 'cardio'){
     card.className = 'card cardio-card';
+    card.dataset.exId = ex.id;
     const done = !!(dayData[dayId] && dayData[dayId][ex.id]);
     card.innerHTML = `
       <div class="cardio-info">
@@ -1308,6 +1328,7 @@ function renderExerciseCard(dayId, ex){
         ${ex.prescription ? `<div class="ex-prescription">${ex.prescription}</div>` : ''}
       </div>
       <div class="card-actions">
+        <div class="drag-handle" data-ex="${ex.id}">⠿</div>
         <div class="gear-btn" data-ex="${ex.id}">⚙</div>
         <div class="remove-btn" data-ex="${ex.id}">✕</div>
         <div class="check ${done ? 'done' : ''}" data-ex="${ex.id}">✓</div>
@@ -1322,6 +1343,7 @@ function renderExerciseCard(dayId, ex){
     });
   } else {
     card.className = 'card';
+    card.dataset.exId = ex.id;
     const sets = ex.sets || 3;
     const values = (dayData[dayId] && dayData[dayId][ex.id]) || [];
     const isHold = ex.type === 'hold';
@@ -1371,6 +1393,7 @@ function renderExerciseCard(dayId, ex){
         </div>
         <div class="card-actions">
           <div class="ex-type-tag">${tag}${isWeight ? ' · ' + weightUnit.toUpperCase() : ''}</div>
+          <div class="drag-handle" data-ex="${ex.id}">⠿</div>
           <div class="gear-btn" data-ex="${ex.id}">⚙</div>
           <div class="remove-btn" data-ex="${ex.id}">✕</div>
         </div>
@@ -1448,7 +1471,75 @@ function renderExerciseCard(dayId, ex){
     wireExerciseForm(panelEl, dayId, ex.id);
   }
 
+  makeDraggable(card, dayId);
+
   return card;
+}
+
+function makeDraggable(card, dayId){
+  const handle = card.querySelector('.drag-handle');
+  if(!handle) return;
+
+  handle.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    const listEl = card.parentElement;
+    let startY = e.clientY;
+
+    card.setPointerCapture(e.pointerId);
+    card.classList.add('dragging');
+    card.style.position = 'relative';
+    card.style.zIndex = 50;
+    document.body.style.overscrollBehavior = 'none';
+    document.body.style.touchAction = 'none';
+
+    function onMove(ev){
+      const dy = ev.clientY - startY;
+      card.style.transform = `translateY(${dy}px)`;
+
+      const cardRect = card.getBoundingClientRect();
+      const cardMidY = cardRect.top + cardRect.height / 2;
+      const siblings = Array.from(listEl.children).filter(c => c !== card && c.classList.contains('card'));
+
+      for(const sib of siblings){
+        const sibRect = sib.getBoundingClientRect();
+        const sibMidY = sibRect.top + sibRect.height / 2;
+        if(dy < 0 && cardMidY < sibMidY){
+          listEl.insertBefore(card, sib);
+          startY = ev.clientY;
+          card.style.transform = 'translateY(0px)';
+          break;
+        } else if(dy > 0 && cardMidY > sibMidY){
+          listEl.insertBefore(card, sib.nextSibling);
+          startY = ev.clientY;
+          card.style.transform = 'translateY(0px)';
+          break;
+        }
+      }
+    }
+
+    function onUp(ev){
+      card.releasePointerCapture(ev.pointerId);
+      card.classList.remove('dragging');
+      card.style.transform = '';
+      card.style.zIndex = '';
+      card.style.position = '';
+      document.body.style.overscrollBehavior = '';
+      document.body.style.touchAction = '';
+      card.removeEventListener('pointermove', onMove);
+      card.removeEventListener('pointerup', onUp);
+      card.removeEventListener('pointercancel', onUp);
+
+      const newOrder = Array.from(listEl.children)
+        .filter(c => c.classList.contains('card') && c.dataset.exId)
+        .map(c => c.dataset.exId);
+      dayConfig[dayId].exercises.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+      saveDayConfig();
+    }
+
+    card.addEventListener('pointermove', onMove);
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onUp);
+  });
 }
 
 function renderDay(dayId){
@@ -1487,9 +1578,12 @@ function renderDay(dayId){
       <div class="small">${dc.exercises.length ? dc.exercises.length + ' saved exercise(s) hidden — switch to workout to see them' : 'no lifts logged here'}</div>`;
     main.appendChild(restPanel);
   } else {
+    const listEl = document.createElement('div');
+    listEl.className = 'exercise-list';
     dc.exercises.forEach(ex=>{
-      main.appendChild(renderExerciseCard(dayId, ex));
+      listEl.appendChild(renderExerciseCard(dayId, ex));
     });
+    main.appendChild(listEl);
   }
 
   if(addFormOpenFor === dayId){
