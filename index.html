@@ -777,6 +777,12 @@ const DEFAULT_DAYS = [
 // Paste your Apps Script Web App URL here (ends in /exec).
 // See apps-script-backend.gs for setup steps. Leave blank to run on
 // localStorage only (data stays on this device/browser).
+//
+// This same URL is used no matter what device or browser opens the app —
+// phone, tablet, desktop, iOS, Android, whatever. The Sheet behind it is
+// the single shared source of truth, so there's nothing to configure
+// per-device: any device that loads this page with this URL sees the same
+// data and syncs to the same place.
 const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbwuKJv_BGx7AeXQrfLBk7h9XrsXlnAx1UhqX0LttaT32JLmne4oIeURn0EDPcoS0_GCug/exec'
 };
@@ -786,7 +792,7 @@ let dayConfig = {};   // { dayId: { rest, code, exercises:[{id,name,type,sets,pr
 let sessions = 0;
 let activeDay = null;
 let toastTimer = null;
-let storageMode = 'unknown'; // 'sheet' | 'local' | 'memory'
+let storageMode = 'unknown'; // 'sheet' | 'local' | 'memory' — same set of states on every device
 let addFormOpenFor = null;   // dayId currently showing the "add exercise" form
 let editFormOpenFor = null;  // exercise id currently showing its edit form
 
@@ -813,9 +819,13 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 6000){
 // Storage adapter: writes to the Google Sheet backend when CONFIG.API_URL is
 // set, mirrors every write to localStorage as an offline cache, and reads
 // from localStorage if the Sheet is unreachable (no signal, script down, etc).
+//
 // Offline sync queue: when a write to the Sheet fails, it's queued here
 // (keyed by storage key, latest value wins) and retried automatically once
 // the connection is back — so offline entries don't get lost, just delayed.
+// This queue is purely internal plumbing now: it still guarantees no data
+// loss, but the UI no longer surfaces a distinct "pending" state to the
+// user — see updateSyncBadge().
 const QUEUE_KEY = '__pending_sync_queue__';
 
 function getQueue(){
@@ -862,7 +872,7 @@ async function flushPendingQueue(){
   }
 
   if(syncedAny){
-    storageMode = queueSize() === 0 ? 'sheet' : 'pending';
+    storageMode = queueSize() === 0 ? 'sheet' : 'local';
     updateSyncBadge();
     if(queueSize() === 0) showToast('synced');
   }
@@ -872,10 +882,12 @@ const store = {
   async get(key){
     // A queued (unsynced) local write means this key has a change the
     // backend has never successfully received. Trusting a remote read here
-    // would silently discard that pending edit — so pending always wins.
+    // would silently discard that pending edit — so a queued write always
+    // wins, it's just labeled as "local" in the UI rather than a separate
+    // pending state.
     const pending = getQueue();
     if(key in pending){
-      storageMode = 'pending';
+      storageMode = 'local';
       try{ localStorage.setItem(key, pending[key]); }catch(e){}
       return pending[key];
     }
@@ -931,7 +943,7 @@ const store = {
     try{
       localStorage.setItem(key, value);
       if(!sheetOk){
-        storageMode = CONFIG.API_URL ? 'pending' : 'local';
+        storageMode = CONFIG.API_URL ? 'local' : 'local';
       }
       return true;
     }catch(e){
@@ -1768,35 +1780,43 @@ document.getElementById('export-backup').addEventListener('click', ()=>{
   showToast('backup downloaded');
 });
 
+// Sync badge now has exactly three possible states, identical on every
+// device/browser: SYNCED (Sheet backend confirmed), LOCAL (this device's
+// cache, either because there's no backend configured or the backend was
+// unreachable — queued writes retry silently in the background), and NOT
+// SAVING (no storage available at all, e.g. localStorage blocked). No
+// "pending sync (n)" indicator is shown anymore; retries just happen
+// quietly and the badge flips to SYNCED once they land.
 function updateSyncBadge(){
   const badge = document.getElementById('sync-badge');
-  const pending = queueSize();
-  if(pending > 0){
-    badge.textContent = `PENDING SYNC (${pending})`;
-    badge.className = 'sync-badge local';
-  } else if(storageMode === 'sheet'){
+  if(storageMode === 'sheet'){
     badge.textContent = 'SYNCED';
     badge.className = 'sync-badge sheet';
-  } else if(storageMode === 'local' || storageMode === 'pending'){
+  } else if(storageMode === 'local'){
     badge.textContent = CONFIG.API_URL ? 'OFFLINE · LOCAL' : 'LOCAL ONLY';
     badge.className = 'sync-badge local';
-  } else {
+  } else if(storageMode === 'memory'){
     badge.textContent = 'NOT SAVING';
     badge.className = 'sync-badge memory';
+  } else {
+    badge.textContent = '···';
+    badge.className = 'sync-badge';
   }
 }
 
 // Retry any queued offline writes: right away on load, whenever the browser
-// regains a connection, and every 30s as a safety net.
+// regains a connection, and every 30s as a safety net. This runs the same
+// way regardless of device — there's no platform-specific branching here.
 window.addEventListener('online', flushPendingQueue);
 setInterval(flushPendingQueue, 30000);
 
 document.getElementById('sync-badge').addEventListener('click', async ()=>{
-  if(queueSize() === 0 && storageMode === 'sheet') return;
+  if(storageMode === 'sheet' && queueSize() === 0) return;
   showToast('retrying sync…');
   await flushPendingQueue();
+  updateSyncBadge();
   if(queueSize() > 0){
-    showToast(`still ${queueSize()} pending — check console`);
+    showToast('still offline — will retry automatically');
   }
 });
 </script>
