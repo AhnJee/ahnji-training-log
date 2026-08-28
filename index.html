@@ -684,9 +684,88 @@
     opacity:1;
     transform:translateX(-50%) translateY(0);
   }
+
+  /* PASSWORD GATE */
+  #gate-screen{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:var(--black);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .gate-box{
+    width:100%;
+    max-width:320px;
+    text-align:center;
+  }
+  .gate-title{
+    font-size:19px;
+    font-weight:700;
+    color:var(--matcha-bright);
+    margin-bottom:4px;
+  }
+  .gate-sub{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:0.03em;
+    margin-bottom:24px;
+  }
+  .gate-input{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    color:var(--cream);
+    font-family:'JetBrains Mono',monospace;
+    font-size:15px;
+    padding:13px 14px;
+    outline:none;
+    text-align:center;
+    letter-spacing:0.04em;
+  }
+  .gate-input:focus{border-color:var(--matcha);}
+  .gate-btn{
+    margin-top:12px;
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    background:var(--matcha-deep);
+    border:1px solid var(--matcha);
+    color:var(--matcha-bright);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    cursor:pointer;
+  }
+  .gate-btn:active{background:var(--matcha);color:#0a0b08;}
+  .gate-error{
+    margin-top:12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:#e2a3a3;
+    min-height:14px;
+  }
+  #app-content{display:none;}
 </style>
 </head>
 <body>
+
+<div id="gate-screen">
+  <div class="gate-box">
+    <div class="gate-title">AhnJi</div>
+    <div class="gate-sub">enter password to continue</div>
+    <input type="password" id="gate-input" class="gate-input" placeholder="password" autocomplete="off">
+    <div class="gate-btn" id="gate-submit">Unlock</div>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<div id="app-content">
 
 <header>
   <div class="title"><span class="name">AhnJi</span><span class="rest">Training Log</span></div>
@@ -719,7 +798,51 @@
 
 <div class="save-toast" id="toast">saved</div>
 
+</div>
+
 <script>
+// ---- PASSWORD GATE ----
+// Client-side only: this hides the app UI until the right password is
+// entered. It does NOT protect the Apps Script backend itself — anyone
+// who has (or extracts) the API_URL from this page's source can still
+// call it directly. This gate just stops casual visitors from opening
+// and editing the routine through the app. Unlocking is remembered for
+// this browser tab's session (closing the tab locks it again).
+const GATE_PASSWORD = 'MosinGianWorkoutRoutine911';
+const GATE_SESSION_KEY = '__ahnji_unlocked__';
+
+function showApp(){
+  document.getElementById('gate-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+}
+
+function tryUnlock(){
+  const input = document.getElementById('gate-input');
+  const err = document.getElementById('gate-error');
+  if(input.value === GATE_PASSWORD){
+    try{ sessionStorage.setItem(GATE_SESSION_KEY, '1'); }catch(e){}
+    showApp();
+    init();
+  } else {
+    err.textContent = 'wrong password';
+    input.value = '';
+    input.focus();
+  }
+}
+
+document.getElementById('gate-submit').addEventListener('click', tryUnlock);
+document.getElementById('gate-input').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') tryUnlock();
+});
+
+let alreadyUnlocked = false;
+try{ alreadyUnlocked = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; }catch(e){}
+if(alreadyUnlocked){
+  showApp();
+} else {
+  document.getElementById('gate-input').focus();
+}
+
 // Cache the app shell for offline loading — see sw.js
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -1758,7 +1881,9 @@ async function init(){
   updateSyncBadge();
   flushPendingQueue();
 }
-init();
+if(alreadyUnlocked){
+  init();
+}
 
 document.getElementById('export-backup').addEventListener('click', ()=>{
   const backup = {
