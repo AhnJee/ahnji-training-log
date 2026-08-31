@@ -1618,9 +1618,15 @@ function makeDraggable(card, dayId){
   handle.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
     const listEl = card.parentElement;
+    const pointerId = e.pointerId;
     let startY = e.clientY;
 
-    card.setPointerCapture(e.pointerId);
+    // NOTE: deliberately not using setPointerCapture here. Mobile browsers
+    // silently drop pointer capture the instant the dragged element is
+    // moved to a new DOM position (which insertBefore does below), so
+    // capture-based listeners on the card itself either die after one
+    // swap or misbehave. Listening on `document` instead means reordering
+    // the card in the DOM can never disconnect the drag.
     card.classList.add('dragging');
     card.style.position = 'relative';
     card.style.zIndex = 50;
@@ -1628,6 +1634,8 @@ function makeDraggable(card, dayId){
     document.body.style.touchAction = 'none';
 
     function onMove(ev){
+      if(ev.pointerId !== pointerId) return;
+      ev.preventDefault();
       const dy = ev.clientY - startY;
       card.style.transform = `translateY(${dy}px)`;
 
@@ -1635,35 +1643,45 @@ function makeDraggable(card, dayId){
       const cardMidY = cardRect.top + cardRect.height / 2;
       const siblings = Array.from(listEl.children).filter(c => c !== card && c.classList.contains('card'));
 
-      for(const sib of siblings){
+      // Pick the CLOSEST sibling whose midpoint the card has crossed in
+      // the direction of travel — not just the first one encountered in
+      // DOM order. Scanning top-to-bottom and taking the first match
+      // meant a downward drag would often match the topmost sibling
+      // first (since the card's midpoint is already below it), causing
+      // the card to jump straight to the top instead of swapping with
+      // its immediate neighbor.
+      let target = null;
+      let targetDist = Infinity;
+      siblings.forEach(sib=>{
         const sibRect = sib.getBoundingClientRect();
         const sibMidY = sibRect.top + sibRect.height / 2;
         if(dy < 0 && cardMidY < sibMidY){
-          listEl.insertBefore(card, sib);
-          startY = ev.clientY;
-          card.style.transform = 'translateY(0px)';
-          break;
+          const dist = sibMidY - cardMidY;
+          if(dist < targetDist){ targetDist = dist; target = { sib, before: true }; }
         } else if(dy > 0 && cardMidY > sibMidY){
-          listEl.insertBefore(card, sib.nextSibling);
-          startY = ev.clientY;
-          card.style.transform = 'translateY(0px)';
-          break;
+          const dist = cardMidY - sibMidY;
+          if(dist < targetDist){ targetDist = dist; target = { sib, before: false }; }
         }
+      });
+
+      if(target){
+        listEl.insertBefore(card, target.before ? target.sib : target.sib.nextSibling);
+        startY = ev.clientY;
+        card.style.transform = 'translateY(0px)';
       }
     }
 
     function finishDrag(ev){
-      try{ card.releasePointerCapture(ev.pointerId); }catch(err){}
+      if(ev && ev.pointerId !== undefined && ev.pointerId !== pointerId) return;
       card.classList.remove('dragging');
       card.style.transform = '';
       card.style.zIndex = '';
       card.style.position = '';
       document.body.style.overscrollBehavior = '';
       document.body.style.touchAction = '';
-      card.removeEventListener('pointermove', onMove);
-      card.removeEventListener('pointerup', finishDrag);
-      card.removeEventListener('pointercancel', finishDrag);
-      card.removeEventListener('lostpointercapture', finishDrag);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', finishDrag);
+      document.removeEventListener('pointercancel', finishDrag);
 
       const newOrder = Array.from(listEl.children)
         .filter(c => c.classList.contains('card') && c.dataset.exId)
@@ -1672,18 +1690,9 @@ function makeDraggable(card, dayId){
       saveDayConfig();
     }
 
-    card.addEventListener('pointermove', onMove);
-    card.addEventListener('pointerup', finishDrag);
-    card.addEventListener('pointercancel', finishDrag);
-    // Mobile browsers can silently drop pointer capture the moment the
-    // dragged card is moved to a new DOM position via insertBefore() above.
-    // When that happens, pointermove/pointerup never fire again, so the
-    // drag would appear to "only swap once" and then get stuck with
-    // leftover inline styles (looks like the card "disappeared") until
-    // the page is reloaded. Listening for lostpointercapture lets us
-    // finalize the drag cleanly the instant that happens, same as a
-    // normal pointerup.
-    card.addEventListener('lostpointercapture', finishDrag);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', finishDrag);
+    document.addEventListener('pointercancel', finishDrag);
   });
 }
 
