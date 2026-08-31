@@ -1633,6 +1633,16 @@ function makeDraggable(card, dayId){
     document.body.style.overscrollBehavior = 'none';
     document.body.style.touchAction = 'none';
 
+    function cardSibling(dir){
+      // dir: 'prev' or 'next' — walks past any non-.card nodes to find
+      // the nearest actual exercise card in that direction.
+      let node = dir === 'prev' ? card.previousElementSibling : card.nextElementSibling;
+      while(node && !node.classList.contains('card')){
+        node = dir === 'prev' ? node.previousElementSibling : node.nextElementSibling;
+      }
+      return node;
+    }
+
     function onMove(ev){
       if(ev.pointerId !== pointerId) return;
       ev.preventDefault();
@@ -1641,33 +1651,39 @@ function makeDraggable(card, dayId){
 
       const cardRect = card.getBoundingClientRect();
       const cardMidY = cardRect.top + cardRect.height / 2;
-      const siblings = Array.from(listEl.children).filter(c => c !== card && c.classList.contains('card'));
 
-      // Pick the CLOSEST sibling whose midpoint the card has crossed in
-      // the direction of travel — not just the first one encountered in
-      // DOM order. Scanning top-to-bottom and taking the first match
-      // meant a downward drag would often match the topmost sibling
-      // first (since the card's midpoint is already below it), causing
-      // the card to jump straight to the top instead of swapping with
-      // its immediate neighbor.
-      let target = null;
-      let targetDist = Infinity;
-      siblings.forEach(sib=>{
-        const sibRect = sib.getBoundingClientRect();
-        const sibMidY = sibRect.top + sibRect.height / 2;
-        if(dy < 0 && cardMidY < sibMidY){
-          const dist = sibMidY - cardMidY;
-          if(dist < targetDist){ targetDist = dist; target = { sib, before: true }; }
-        } else if(dy > 0 && cardMidY > sibMidY){
-          const dist = cardMidY - sibMidY;
-          if(dist < targetDist){ targetDist = dist; target = { sib, before: false }; }
+      // Only ever compare against the card's CURRENT immediate neighbor
+      // in the direction of travel — never scan the whole list. Scanning
+      // every sibling and picking the "closest" one was unreliable: a
+      // middle card's earlier and later neighbors can both already
+      // satisfy the crossing test before any movement happens (since the
+      // card starts out below its earlier neighbors and above its later
+      // ones), so the wrong swap — or no visible swap — kept winning.
+      // Comparing one neighbor at a time and re-checking after each swap
+      // (as the new neighbor becomes current) is what makes a multi-step
+      // drag work smoothly for every row, not just the ends of the list.
+      if(dy < 0){
+        const prev = cardSibling('prev');
+        if(prev){
+          const prevRect = prev.getBoundingClientRect();
+          const prevMidY = prevRect.top + prevRect.height / 2;
+          if(cardMidY < prevMidY){
+            listEl.insertBefore(card, prev);
+            startY = ev.clientY;
+            card.style.transform = 'translateY(0px)';
+          }
         }
-      });
-
-      if(target){
-        listEl.insertBefore(card, target.before ? target.sib : target.sib.nextSibling);
-        startY = ev.clientY;
-        card.style.transform = 'translateY(0px)';
+      } else if(dy > 0){
+        const next = cardSibling('next');
+        if(next){
+          const nextRect = next.getBoundingClientRect();
+          const nextMidY = nextRect.top + nextRect.height / 2;
+          if(cardMidY > nextMidY){
+            listEl.insertBefore(card, next.nextSibling);
+            startY = ev.clientY;
+            card.style.transform = 'translateY(0px)';
+          }
+        }
       }
     }
 
