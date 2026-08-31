@@ -1652,8 +1652,8 @@ function makeDraggable(card, dayId){
       }
     }
 
-    function onUp(ev){
-      card.releasePointerCapture(ev.pointerId);
+    function finishDrag(ev){
+      try{ card.releasePointerCapture(ev.pointerId); }catch(err){}
       card.classList.remove('dragging');
       card.style.transform = '';
       card.style.zIndex = '';
@@ -1661,8 +1661,9 @@ function makeDraggable(card, dayId){
       document.body.style.overscrollBehavior = '';
       document.body.style.touchAction = '';
       card.removeEventListener('pointermove', onMove);
-      card.removeEventListener('pointerup', onUp);
-      card.removeEventListener('pointercancel', onUp);
+      card.removeEventListener('pointerup', finishDrag);
+      card.removeEventListener('pointercancel', finishDrag);
+      card.removeEventListener('lostpointercapture', finishDrag);
 
       const newOrder = Array.from(listEl.children)
         .filter(c => c.classList.contains('card') && c.dataset.exId)
@@ -1672,8 +1673,17 @@ function makeDraggable(card, dayId){
     }
 
     card.addEventListener('pointermove', onMove);
-    card.addEventListener('pointerup', onUp);
-    card.addEventListener('pointercancel', onUp);
+    card.addEventListener('pointerup', finishDrag);
+    card.addEventListener('pointercancel', finishDrag);
+    // Mobile browsers can silently drop pointer capture the moment the
+    // dragged card is moved to a new DOM position via insertBefore() above.
+    // When that happens, pointermove/pointerup never fire again, so the
+    // drag would appear to "only swap once" and then get stuck with
+    // leftover inline styles (looks like the card "disappeared") until
+    // the page is reloaded. Listening for lostpointercapture lets us
+    // finalize the drag cleanly the instant that happens, same as a
+    // normal pointerup.
+    card.addEventListener('lostpointercapture', finishDrag);
   });
 }
 
