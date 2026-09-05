@@ -1000,14 +1000,18 @@ async function flushPendingQueue(){
   let syncedAny = false;
   for(const key of keys){
     try{
-      await fetchWithTimeout(CONFIG.API_URL, {
+      const res = await fetchWithTimeout(CONFIG.API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ key, value: q[key] })
       }, 10000);
+      if(!res.ok) throw new Error('bad status ' + res.status);
+      const data = await res.json();
+      if(data && data.error) throw new Error('backend error: ' + data.error);
       removeFromQueue(key);
       syncedAny = true;
     }catch(e){
+      console.warn('Retry sync failed for', key, e);
       break; // still unreachable — stop and try again next time
     }
   }
@@ -1079,15 +1083,23 @@ const store = {
     let sheetOk = false;
     if(CONFIG.API_URL){
       try{
-        await fetchWithTimeout(CONFIG.API_URL, {
+        const res = await fetchWithTimeout(CONFIG.API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ key, value })
         }, 10000);
+        if(!res.ok) throw new Error('bad status ' + res.status);
+        const data = await res.json();
+        if(data && data.error) throw new Error('backend error: ' + data.error);
         sheetOk = true;
         storageMode = 'sheet';
         removeFromQueue(key);
       }catch(e){
+        // Previously this failure was swallowed silently, which is why it
+        // was impossible to tell CORS/network/timeout/script-error apart
+        // from the outside. Check the browser console after a save to see
+        // exactly what this says.
+        console.warn('Sheet write failed for', key, '\u2014 queued locally.', e);
         addToQueue(key, value);
       }
     }
