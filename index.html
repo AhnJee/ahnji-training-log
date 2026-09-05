@@ -653,6 +653,18 @@
     font-size:11px;
   }
 
+  .rest-day-note{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:#d8c6a3;
+    background:#20190f;
+    border:1px solid var(--rest);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:12px;
+    line-height:1.5;
+  }
+
   .loading-state{
     text-align:center;
     padding:60px 20px;
@@ -910,6 +922,12 @@ const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbwuKJv_BGx7AeXQrfLBk7h9XrsXlnAx1UhqX0LttaT32JLmne4oIeURn0EDPcoS0_GCug/exec'
 };
 
+// Exercise "type" values and which ones are allowed to be added on a Rest
+// day. Rest days are meant for recovery, so only low-intensity, restorative
+// work can be logged there — everything else (weight/hold/reps strength
+// work) stays workout-day-only.
+const REST_DAY_TYPES = ['stretch-dynamic', 'stretch-static', 'meditation', 'cardio'];
+
 let dayData = {};     // { dayId: { exerciseId: [v1,v2,v3] or true(cardio) } }
 let dayConfig = {};   // { dayId: { rest, code, exercises:[{id,name,type,sets,prescription,restSec,unit}] } }
 let sessions = 0;
@@ -986,7 +1004,7 @@ async function flushPendingQueue(){
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ key, value: q[key] })
-      });
+      }, 10000);
       removeFromQueue(key);
       syncedAny = true;
     }catch(e){
@@ -1016,7 +1034,17 @@ const store = {
     }
     if(CONFIG.API_URL){
       try{
-        const res = await fetchWithTimeout(`${CONFIG.API_URL}?key=${encodeURIComponent(key)}`);
+        // cache:'no-store' + a cache-busting timestamp param stop the browser
+        // (and any CDN in front of the Apps Script URL) from serving back an
+        // old cached response for this exact GET URL. Without this, a device
+        // can keep seeing a stale snapshot from before your last edit even
+        // though the Sheet itself has the newer value — which looks exactly
+        // like your changes "reset to what it was before."
+        const res = await fetchWithTimeout(
+          `${CONFIG.API_URL}?key=${encodeURIComponent(key)}&_=${Date.now()}`,
+          { cache: 'no-store' },
+          10000
+        );
         if(!res.ok) throw new Error('bad status ' + res.status);
         const data = await res.json();
         if(typeof data !== 'object' || data === null) throw new Error('malformed response');
@@ -1055,7 +1083,7 @@ const store = {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ key, value })
-        });
+        }, 10000);
         sheetOk = true;
         storageMode = 'sheet';
         removeFromQueue(key);
@@ -1298,14 +1326,32 @@ function openAddForm(dayId){
   renderDay(dayId);
 }
 
-function exerciseFormHTML(ex){
-  const e = ex || { name:'', type:'reps', sets:3, prescription:'', restSec:120, unit:'lb' };
+function exerciseFormHTML(ex, restrictToRestTypes){
+  const e = ex || { name:'', type: restrictToRestTypes ? 'stretch-static' : 'reps', sets:3, prescription:'', restSec:120, unit:'lb' };
   const safeName = (e.name || '').replace(/"/g,'&quot;');
   const safePres = (e.prescription || '').replace(/"/g,'&quot;');
-  const isCardio = e.type === 'cardio';
+  const isCardio = e.type === 'cardio' || e.type === 'meditation';
   const isWeight = e.type === 'weight';
   const unit = e.unit || 'lb';
+
+  const allOptions = [
+    { value:'weight', label:'Weight (load)' },
+    { value:'hold', label:'Hold (seconds)' },
+    { value:'reps', label:'Reps only' },
+    { value:'stretch-static', label:'Static Stretch' },
+    { value:'stretch-dynamic', label:'Dynamic Stretch' },
+    { value:'meditation', label:'Meditation' },
+    { value:'cardio', label:'Zone 2 Cardio' },
+  ];
+  const options = restrictToRestTypes
+    ? allOptions.filter(o => REST_DAY_TYPES.includes(o.value))
+    : allOptions;
+  const optionsHtml = options.map(o=>
+    `<option value="${o.value}" ${e.type===o.value?'selected':''}>${o.label}</option>`
+  ).join('');
+
   return `<div class="edit-panel">
+      ${restrictToRestTypes ? `<div class="rest-day-note">Rest day: only stretching, meditation, and Zone 2 cardio can be logged here.</div>` : ''}
       <div class="edit-row">
         <label>Name</label>
         <input type="text" class="ex-form-name" value="${safeName}" placeholder="Exercise name">
@@ -1313,10 +1359,7 @@ function exerciseFormHTML(ex){
       <div class="edit-row">
         <label>Type / load</label>
         <select class="ex-form-type">
-          <option value="weight" ${e.type==='weight'?'selected':''}>Weight (load)</option>
-          <option value="hold" ${e.type==='hold'?'selected':''}>Hold (seconds)</option>
-          <option value="reps" ${e.type==='reps'?'selected':''}>Reps only</option>
-          <option value="cardio" ${e.type==='cardio'?'selected':''}>Cardio (minutes)</option>
+          ${optionsHtml}
         </select>
       </div>
       <div class="edit-row ex-form-unit-row" style="${isWeight?'':'display:none;'}">
@@ -1356,13 +1399,15 @@ function wireExerciseForm(panelEl, dayId, exId){
   const restRow = panelEl.querySelector('.ex-form-rest-row');
   const unitRow = panelEl.querySelector('.ex-form-unit-row');
 
-  typeSelect.addEventListener('change', ()=>{
-    const isCardio = typeSelect.value === 'cardio';
+  function syncRowsToType(){
+    const isCardio = typeSelect.value === 'cardio' || typeSelect.value === 'meditation';
     const isWeight = typeSelect.value === 'weight';
     setsRow.style.display = isCardio ? 'none' : '';
     restRow.style.display = isCardio ? 'none' : '';
     unitRow.style.display = isWeight ? '' : 'none';
-  });
+  }
+  typeSelect.addEventListener('change', syncRowsToType);
+  syncRowsToType();
 
   panelEl.querySelector('.ex-form-sets-minus').addEventListener('click', ()=>{
     setsVal = Math.max(1, setsVal - 1);
@@ -1385,6 +1430,7 @@ function wireExerciseForm(panelEl, dayId, exId){
     const restSec = parseInt(panelEl.querySelector('.ex-form-rest').value, 10) || 0;
     const sets = setsVal;
     const unit = panelEl.querySelector('.ex-form-unit').value;
+    const isCardioLike = type === 'cardio' || type === 'meditation';
 
     if(!name){
       panelEl.querySelector('.ex-form-name').focus();
@@ -1395,12 +1441,12 @@ function wireExerciseForm(panelEl, dayId, exId){
       const ex = dayConfig[dayId].exercises.find(x=> x.id === exId);
       if(!ex) return;
       const typeChanged = ex.type !== type;
-      const setsChanged = type !== 'cardio' && ex.sets !== sets;
+      const setsChanged = !isCardioLike && ex.sets !== sets;
       const unitChanged = type === 'weight' && ex.unit !== unit;
       ex.name = name;
       ex.type = type;
       ex.prescription = prescription;
-      if(type !== 'cardio'){
+      if(!isCardioLike){
         ex.sets = sets;
         ex.restSec = restSec;
       } else {
@@ -1414,7 +1460,7 @@ function wireExerciseForm(panelEl, dayId, exId){
       }
       if(typeChanged || setsChanged){
         if(!dayData[dayId]) dayData[dayId] = {};
-        dayData[dayId][exId] = (type === 'cardio') ? false : Array(sets).fill(null);
+        dayData[dayId][exId] = isCardioLike ? false : Array(sets).fill(null);
       } else if(unitChanged){
         // Values stay as raw numbers — just relabeled; no conversion is
         // attempted since past entries were logged in the old unit.
@@ -1426,7 +1472,7 @@ function wireExerciseForm(panelEl, dayId, exId){
         id, name, type,
         prescription: prescription
       };
-      if(type !== 'cardio'){
+      if(!isCardioLike){
         newEx.sets = sets;
         newEx.restSec = restSec;
       }
@@ -1434,9 +1480,8 @@ function wireExerciseForm(panelEl, dayId, exId){
         newEx.unit = unit;
       }
       dayConfig[dayId].exercises.push(newEx);
-      if(dayConfig[dayId].rest) dayConfig[dayId].rest = false;
       if(!dayData[dayId]) dayData[dayId] = {};
-      dayData[dayId][id] = (type === 'cardio') ? false : Array(sets).fill(null);
+      dayData[dayId][id] = isCardioLike ? false : Array(sets).fill(null);
       addFormOpenFor = null;
     }
 
@@ -1447,10 +1492,23 @@ function wireExerciseForm(panelEl, dayId, exId){
   });
 }
 
+function exerciseTypeMeta(type){
+  switch(type){
+    case 'hold': return { tag:'HOLD', isHold:true, isWeight:false, isCardio:false };
+    case 'stretch-static': return { tag:'STRETCH · HOLD', isHold:true, isWeight:false, isCardio:false };
+    case 'stretch-dynamic': return { tag:'STRETCH · REPS', isHold:false, isWeight:false, isCardio:false };
+    case 'weight': return { tag:'LOAD', isHold:false, isWeight:true, isCardio:false };
+    case 'meditation': return { tag:'MEDITATION', isHold:false, isWeight:false, isCardio:true };
+    case 'cardio': return { tag:'ZONE 2', isHold:false, isWeight:false, isCardio:true };
+    default: return { tag:'REPS', isHold:false, isWeight:false, isCardio:false };
+  }
+}
+
 function renderExerciseCard(dayId, ex){
   const card = document.createElement('div');
+  const meta = exerciseTypeMeta(ex.type);
 
-  if(ex.type === 'cardio'){
+  if(meta.isCardio){
     card.className = 'card cardio-card';
     card.dataset.exId = ex.id;
     const done = !!(dayData[dayId] && dayData[dayId][ex.id]);
@@ -1463,6 +1521,7 @@ function renderExerciseCard(dayId, ex){
         ${ex.prescription ? `<div class="ex-prescription">${ex.prescription}</div>` : ''}
       </div>
       <div class="card-actions">
+        <div class="ex-type-tag">${meta.tag}</div>
         <div class="drag-handle" data-ex="${ex.id}">⠿</div>
         <div class="gear-btn" data-ex="${ex.id}">⚙</div>
         <div class="remove-btn" data-ex="${ex.id}">✕</div>
@@ -1481,10 +1540,10 @@ function renderExerciseCard(dayId, ex){
     card.dataset.exId = ex.id;
     const sets = ex.sets || 3;
     const values = (dayData[dayId] && dayData[dayId][ex.id]) || [];
-    const isHold = ex.type === 'hold';
-    const isWeight = ex.type === 'weight';
+    const isHold = meta.isHold;
+    const isWeight = meta.isWeight;
     const weightUnit = ex.unit || 'lb';
-    const tag = isHold ? 'HOLD' : (isWeight ? 'LOAD' : 'REPS');
+    const tag = meta.tag;
 
     let setsHtml = '';
     if(isWeight){
@@ -1600,7 +1659,7 @@ function renderExerciseCard(dayId, ex){
 
   if(editFormOpenFor === ex.id){
     const wrap = document.createElement('div');
-    wrap.innerHTML = exerciseFormHTML(ex);
+    wrap.innerHTML = exerciseFormHTML(ex, dayConfig[dayId].rest);
     const panelEl = wrap.firstElementChild;
     card.appendChild(panelEl);
     wireExerciseForm(panelEl, dayId, ex.id);
@@ -1740,44 +1799,62 @@ function renderDay(dayId){
   toolbar.querySelector('#rest-toggle-btn').addEventListener('click', ()=> toggleDayRest(dayId));
   const progressEl = toolbar.querySelector('#day-progress-text');
 
-  if(dc.rest){
+  // On a rest day, only restorative exercise types (stretching, meditation,
+  // Zone 2 cardio) are shown/loggable. Any strength-type exercises left
+  // over from before the day was switched to rest stay saved in the data,
+  // they're just hidden here (and can't be edited) until the day is
+  // switched back to a workout day.
+  const visibleExercises = dc.rest
+    ? dc.exercises.filter(ex => REST_DAY_TYPES.includes(ex.type))
+    : dc.exercises;
+  const hiddenCount = dc.exercises.length - visibleExercises.length;
+
+  if(dc.rest && hiddenCount > 0){
+    const note = document.createElement('div');
+    note.className = 'rest-day-note';
+    note.textContent = `${hiddenCount} workout exercise(s) hidden on this rest day — switch back to see them.`;
+    main.appendChild(note);
+  }
+
+  const listEl = document.createElement('div');
+  listEl.className = 'exercise-list';
+  visibleExercises.forEach(ex=>{
+    listEl.appendChild(renderExerciseCard(dayId, ex));
+  });
+  main.appendChild(listEl);
+
+  if(dc.rest && visibleExercises.length === 0 && hiddenCount === 0){
     const restPanel = document.createElement('div');
     restPanel.className = 'rest-panel';
     restPanel.innerHTML = `
       <div class="big">Decompression Day</div>
-      <div class="small">${dc.exercises.length ? dc.exercises.length + ' saved exercise(s) hidden — switch to workout to see them' : 'no lifts logged here'}</div>`;
+      <div class="small">add a stretch, a meditation session, or some Zone 2 below</div>`;
     main.appendChild(restPanel);
-  } else {
-    const listEl = document.createElement('div');
-    listEl.className = 'exercise-list';
-    dc.exercises.forEach(ex=>{
-      listEl.appendChild(renderExerciseCard(dayId, ex));
-    });
-    main.appendChild(listEl);
   }
 
   if(addFormOpenFor === dayId){
     const formCard = document.createElement('div');
     formCard.className = 'card';
-    formCard.innerHTML = exerciseFormHTML(null);
+    formCard.innerHTML = exerciseFormHTML(null, dc.rest);
     main.appendChild(formCard);
     wireExerciseForm(formCard, dayId, null);
   } else {
     const addBtn = document.createElement('div');
     addBtn.className = 'add-exercise-btn';
-    addBtn.textContent = '+ Add exercise';
+    addBtn.textContent = dc.rest ? '+ Add stretch / meditation / cardio' : '+ Add exercise';
     addBtn.addEventListener('click', ()=> openAddForm(dayId));
     main.appendChild(addBtn);
   }
 
-  // progress readout
+  // progress readout (only counts what's actually visible/loggable today)
   let totalFields = 0;
   let filled = 0;
-  dc.exercises.forEach(ex=>{
-    if(ex.type === 'cardio'){
+  visibleExercises.forEach(ex=>{
+    const meta = exerciseTypeMeta(ex.type);
+    if(meta.isCardio){
       totalFields += 1;
       if(dayData[dayId] && dayData[dayId][ex.id]) filled += 1;
-    } else if(ex.type === 'weight'){
+    } else if(meta.isWeight){
       const n = ex.sets || 3;
       totalFields += n * 2;
       const v = dayData[dayId] && dayData[dayId][ex.id];
@@ -1796,7 +1873,7 @@ function renderDay(dayId){
       if(Array.isArray(v)) filled += v.filter(x=> x !== '' && x != null && typeof x !== 'object').length;
     }
   });
-  progressEl.textContent = dc.rest ? '' : `${filled} / ${totalFields} FIELDS LOGGED`;
+  progressEl.textContent = visibleExercises.length ? `${filled} / ${totalFields} FIELDS LOGGED` : '';
 }
 
 function startEditingName(nameEl, dayId, exId){
