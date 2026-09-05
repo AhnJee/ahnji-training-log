@@ -952,9 +952,20 @@ function cloneDefaultDayConfig(){
 // Fetch with a hard timeout — prevents the app from hanging forever if the
 // Apps Script backend is slow, cold-starting, or unreachable.
 function fetchWithTimeout(url, options = {}, timeoutMs = 6000){
-  const controller = new AbortController();
-  const id = setTimeout(()=> controller.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: controller.signal }).finally(()=> clearTimeout(id));
+  // Deliberately NOT using AbortController/signal here. Combining an
+  // AbortSignal-based fetch with an active Service Worker (like the one
+  // this app registers) triggers a real Chrome bug: it throws
+  // "DataCloneError: ... AbortSignal object could not be cloned" while
+  // trying to pass internal state across processes, and the request never
+  // even gets a chance to complete. Racing against a plain timer instead
+  // gives the same "give up after N seconds" behavior without ever
+  // constructing an AbortSignal, so it can't hit that bug. The underlying
+  // fetch isn't cancelled when the timer wins the race, but we simply stop
+  // waiting on it, which is all this app actually needs.
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout after ' + timeoutMs + 'ms')), timeoutMs))
+  ]);
 }
 
 // Storage adapter: writes to the Google Sheet backend when CONFIG.API_URL is
