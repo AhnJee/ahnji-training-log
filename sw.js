@@ -1,51 +1,54 @@
-// AhnJi Training Log — service worker
-// Caches the app shell so the page still opens with zero connection.
-// Data reads/writes go through the existing online/offline fallback logic
-// inside index.html once it's running.
-//
-// v2: switched from cache-first to network-first for the app shell.
-// Cache-first was serving an old cached copy of index.html on every load
-// and only refreshing the cache in the background for *next* time — so a
-// fixed/updated version of the app could take two reloads to actually show
-// up. Network-first always tries the live file first and only falls back
-// to the cache when there's no connection.
-const CACHE_NAME = 'ahnji-training-log-v2';
-const APP_SHELL = [
-  './',
-  './index.html'
-];
+// Bump CACHE_VERSION on every deploy. Anything cached under an old
+// version name gets deleted automatically on activate, and every open
+// client (including a phone's home-screen shortcut) is claimed by the
+// new worker right away instead of waiting for every tab/shortcut to be
+// fully closed first — that combination is what previously let a
+// shortcut keep serving a frozen, months-old copy of index.html even
+// while the phone had a perfectly good connection.
+const CACHE_VERSION = 'ahnji-shell-v2';
+const APP_SHELL = ['./', './index.html'];
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  );
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+  );
 });
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
+
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  // Only handle same-origin GET requests for the app shell itself.
-  // Everything else (in particular, calls to the Apps Script API) goes
-  // straight to the network untouched — the app's own store adapter
-  // already handles those failing gracefully.
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
+  // Page navigations (loading index.html itself): NETWORK-FIRST.
+  // Always try to fetch the live, current file first. Only fall back to
+  // the cached shell if the network request genuinely fails (i.e. you're
+  // actually offline). This is the key change — it means "online" always
+  // means "you see the latest version," and the cache only exists as a
+  // safety net for real offline use, not as a default.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached || caches.match('./index.html'))
+        )
+    );
     return;
   }
+
+  // Other static assets (fonts, etc.): cache-first is fine, they rarely change.
   event.respondWith(
-    fetch(req)
-      .then((res) => {
-        if (res && res.status === 200) {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-        }
-        return res;
-      })
-      .catch(() => caches.match(req))
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
