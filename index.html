@@ -1190,12 +1190,20 @@ function showToast(msg){
 async function loadAll(){
   dayConfig = cloneDefaultDayConfig();
 
-  const [rawSessions, rawNames, rawDayConfig, ...rawDays] = await Promise.all([
-    store.get('sessions-count'),
-    store.get('exercise-names'),
-    store.get('day-config'),
-    ...DEFAULT_DAYS.map(day => store.get('day-data:' + day.id))
-  ]);
+  // Fetched ONE KEY AT A TIME on purpose. Apps Script Web Apps effectively
+  // process requests serially on Google's side — firing all 9 of these as
+  // Promise.all() used to slam the backend with simultaneous requests, and
+  // whichever ones got stalled behind the others would time out client-side
+  // and look like "offline" even on a perfectly good connection. Going
+  // sequential is slightly slower on first load but far more reliable, and
+  // it avoids the backend silently dropping/throttling concurrent calls.
+  const rawSessions = await store.get('sessions-count');
+  const rawNames = await store.get('exercise-names');
+  const rawDayConfig = await store.get('day-config');
+  const rawDays = [];
+  for(const day of DEFAULT_DAYS){
+    rawDays.push(await store.get('day-data:' + day.id));
+  }
 
   sessions = rawSessions ? (parseInt(rawSessions,10) || 0) : 0;
   renderOdometer();
